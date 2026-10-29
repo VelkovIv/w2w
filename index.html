@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0b12">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="W2W">
+  <title>W2W — What to Watch</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <img class="logo" src="logo.svg" alt="W2W">
+      <span class="brand-text"><b>W2W</b><small>What to Watch</small></span>
+    </div>
+    <nav class="nav">
+      <button class="nav-btn active" data-view="towatch">
+        <svg viewBox="0 0 24 24"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+        <span>За гледане</span><span class="count" id="count-towatch">0</span>
+      </button>
+      <button class="nav-btn" data-view="watched">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+        <span>Гледани</span><span class="count" id="count-watched">0</span>
+      </button>
+      <button class="nav-btn" data-view="discover">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z"/></svg>
+        <span>Открий</span>
+      </button>
+      <button class="nav-btn" data-view="recommend">
+        <svg viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+        <span>Препоръки</span>
+      </button>
+      <button class="nav-btn" data-action="open-settings">
+        <svg viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+        <span>Настройки</span>
+      </button>
+    </nav>
+    <div class="side-stats" id="stats"></div>
+    <div class="version">W2W · v2.1.0</div>
+  </aside>
+
+  <main class="main">
+    <div class="sticky-head">
+    <header class="topbar">
+      <div class="topbar-title">
+        <img class="mobile-logo" src="logo.svg" alt="W2W">
+        <div>
+          <h1 id="view-title">За гледане</h1>
+          <p id="view-sub" class="muted"></p>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn ghost sm compact-toggle" data-action="toggle-filters">
+          <svg viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg> Филтри
+        </button>
+        <button class="btn primary" data-action="open-add" title="Добави заглавие">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> <span class="btn-label">Добави заглавие</span>
+        </button>
+      </div>
+    </header>
+
+    <section class="filters" id="filters">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="f-q" type="search" placeholder="Търси по заглавие, актьор, режисьор, жанр...">
+      </div>
+      <div class="filter-row collapsible">
+        <input id="f-actor" list="dl-actors" placeholder="Актьор">
+        <input id="f-director" list="dl-directors" placeholder="Режисьор">
+        <select id="f-genre"><option value="">Всички жанрове</option></select>
+        <select id="f-type">
+          <option value="">Филми и сериали</option>
+          <option value="movie">Само филми</option>
+          <option value="series">Само сериали</option>
+        </select>
+        <select id="f-progress">
+          <option value="">Започнати и незапочнати</option>
+          <option value="watching">Гледам в момента</option>
+          <option value="notstarted">Незапочнати</option>
+          <option value="new">С нов сезон</option>
+        </select>
+        <select id="f-opinion">
+          <option value="">Всички оценки</option>
+          <option value="like">Харесани (★★★ и повече)</option>
+          <option value="dislike">Нехаресани (★ – ★★)</option>
+          <option value="none">Без оценка</option>
+        </select>
+        <select id="f-viewer">
+          <option value="">Всички зрители</option>
+          <option value="Мариана">Мариана</option>
+          <option value="Ивайло">Ивайло</option>
+          <option value="Семейно">Семейно</option>
+          <option value="none">Без отбелязано</option>
+        </select>
+        <label class="range">
+          <span>IMDb ≥ <b id="f-rating-val">0</b></span>
+          <input id="f-rating" type="range" min="0" max="9.5" step="0.5" value="0">
+        </label>
+        <select id="f-sort">
+          <option value="added">Последно добавени</option>
+          <option value="rating">Най-висок рейтинг</option>
+          <option value="stars">Моята оценка</option>
+          <option value="year">Най-нови</option>
+          <option value="title">По заглавие</option>
+        </select>
+        <button class="btn ghost sm" data-action="reset-filters">Изчисти</button>
+      </div>
+      <datalist id="dl-actors"></datalist>
+      <datalist id="dl-directors"></datalist>
+      <p class="muted small collapsible" id="result-count"></p>
+    </section>
+
+    <section class="filters" id="discover-panel" hidden>
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="d-keyword" type="search" placeholder="Ключова дума или поредица — напр. Star Wars, Marvel, Harry Potter, Batman">
+      </div>
+      <div class="filter-row collapsible">
+        <select id="d-type">
+          <option value="both">Филми и сериали</option>
+          <option value="movie">Само филми</option>
+          <option value="tv">Само сериали</option>
+        </select>
+        <input id="d-actor" placeholder="Актьор (напр. Tom Hanks)">
+        <input id="d-director" placeholder="Режисьор / създател">
+        <input id="d-studio" list="dl-studios" placeholder="Студио / платформа (Apple TV+, Disney+...)">
+        <datalist id="dl-studios"></datalist>
+      </div>
+      <div class="filter-row collapsible">
+        <label class="range solo">
+          <span>IMDb ≥ <b id="d-rating-val">7</b></span>
+          <input id="d-rating" type="range" min="0" max="9" step="0.5">
+        </label>
+      </div>
+      <div class="filter-row collapsible">
+        <input id="d-year-from" type="number" min="1900" max="2100" placeholder="От година">
+        <input id="d-year-to" type="number" min="1900" max="2100" placeholder="До година">
+        <select id="d-lang">
+          <option value="">Всеки език</option>
+          <option value="en">Английски</option>
+          <option value="bg">Български</option>
+          <option value="fr">Френски</option>
+          <option value="de">Немски</option>
+          <option value="es">Испански</option>
+          <option value="it">Италиански</option>
+          <option value="ko">Корейски</option>
+          <option value="ja">Японски</option>
+          <option value="tr">Турски</option>
+          <option value="da">Датски</option>
+          <option value="sv">Шведски</option>
+          <option value="hi">Хинди</option>
+        </select>
+        <select id="d-sort">
+          <option value="popularity">Най-популярни</option>
+          <option value="rating">Най-високо оценени</option>
+          <option value="newest">Най-нови</option>
+        </select>
+      </div>
+      <div class="chips collapsible" id="d-genres"></div>
+      <div class="filter-row">
+        <button class="btn primary" id="d-search" data-action="discover-search">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg> Търси
+        </button>
+        <button class="btn ghost" data-action="discover-reset">Изчисти</button>
+        <span class="muted small" id="d-status"></span>
+      </div>
+    </section>
+    </div>
+
+    <section id="content"></section>
+  </main>
+
+  <!-- Добавяне -->
+  <div class="modal" id="modal-add" hidden>
+    <div class="modal-card wide">
+      <button class="modal-close" data-action="close-modal" aria-label="Затвори">&times;</button>
+      <h2>Добави филм или сериал</h2>
+      <div class="add-bar">
+        <div class="search-wrap grow">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="add-input" type="search" placeholder="Заглавие на английски или IMDb линк / ID (tt0111161)" autocomplete="off">
+        </div>
+        <select id="add-type">
+          <option value="">Всички</option>
+          <option value="movie">Филми</option>
+          <option value="series">Сериали</option>
+        </select>
+      </div>
+      <div id="add-results" class="results"><p class="hint">Започнете да пишете, за да търсите в IMDb.</p></div>
+    </div>
+  </div>
+
+  <!-- Детайли -->
+  <div class="modal" id="modal-detail" hidden>
+    <div class="modal-card wide">
+      <button class="modal-close" data-action="close-modal" aria-label="Затвори">&times;</button>
+      <div id="detail-body"></div>
+    </div>
+  </div>
+
+  <!-- Настройки -->
+  <div class="modal" id="modal-settings" hidden>
+    <div class="modal-card">
+      <button class="modal-close" data-action="close-modal" aria-label="Затвори">&times;</button>
+      <h2>Настройки</h2>
+      <div class="account" id="account-box" hidden>
+        <span>Влезли сте като <b id="account-email"></b><br><small class="muted">Списъците и ключовете се синхронизират между устройствата</small></span>
+        <button class="btn ghost sm" id="account-signout">Изход</button>
+      </div>
+      <label class="field">
+        <span>OMDb API ключ (данни и рейтинги от IMDb)</span>
+        <div class="add-bar">
+          <input id="api-key" type="password" placeholder="напр. a1b2c3d4" class="grow">
+          <button class="btn primary" data-action="save-key">Запази</button>
+        </div>
+        <small class="muted">Безплатен ключ: <a href="https://www.omdbapi.com/apikey.aspx" target="_blank" rel="noopener noreferrer">omdbapi.com/apikey.aspx</a> (избери FREE, потвърди от имейла).</small>
+      </label>
+      <label class="field">
+        <span>TMDB API ключ (автоматично търсене по критерии)</span>
+        <div class="add-bar">
+          <input id="tmdb-key" type="password" placeholder="API Key (v3) или Read Access Token" class="grow">
+          <button class="btn primary" data-action="save-tmdb">Запази</button>
+        </div>
+        <small class="muted">Безплатен ключ: регистрация в <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer">themoviedb.org/settings/api</a>.</small>
+      </label>
+      <div class="settings-grid">
+        <button class="btn ghost" data-action="refresh-ratings">Обнови рейтингите</button>
+        <button class="btn ghost" data-action="check-seasons">Провери за нови сезони</button>
+        <button class="btn ghost" data-action="export">Експорт (JSON)</button>
+        <button class="btn ghost" data-action="import">Импорт (JSON)</button>
+        <button class="btn danger-ghost" data-action="clear-all">Изтрий всичко</button>
+      </div>
+      <input type="file" id="import-file" accept="application/json" hidden>
+    </div>
+  </div>
+
+  <div id="toasts"></div>
+
+  <div class="auth-gate" id="auth-gate" hidden>
+    <div class="auth-card">
+      <img class="auth-logo" src="logo.svg" alt="W2W">
+      <h1>W2W</h1>
+      <p class="muted">What to Watch</p>
+      <div id="auth-loading"><div class="loader"></div></div>
+      <div id="auth-login" hidden>
+        <button class="btn primary wide" id="auth-google">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> Вход с Google
+        </button>
+        <p class="muted small">Достъпът е само за разрешени акаунти.</p>
+      </div>
+      <div id="auth-denied" hidden>
+        <p>Акаунтът <b id="auth-denied-email"></b> няма достъп.</p>
+        <button class="btn ghost wide" id="auth-signout">Изход и вход с друг акаунт</button>
+      </div>
+      <p class="hint error" id="auth-error"></p>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script type="module" src="cloud.js"></script>
+</body>
+</html>
