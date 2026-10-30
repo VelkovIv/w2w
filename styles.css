@@ -208,6 +208,9 @@ button.chip:hover { border-color: var(--accent); color: var(--text); }
 .viewer.v1.on { background: #3b82f6; }
 .viewer.v2.on { background: #f59e0b; }
 .rec-for { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.rec-sep { margin-left: 12px; }
+.subsection { margin-bottom: 22px; }
+.subsection h3 { font-size: .95rem; font-weight: 700; margin: 4px 0 12px; display: flex; align-items: baseline; gap: 8px; color: #d6d8e6; }
 .stars { display: flex; align-items: center; gap: 2px; }
 .star {
   position: relative; display: inline-block; font-size: 1.15rem; line-height: 1;

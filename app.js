@@ -110,6 +110,7 @@ const state = {
   loadingDiscover: false,
   disc: { criteria: loadCriteria(), results: [], page: 0, more: false, loading: false, tvList: null, error: '' },
   recViewer: '',
+  recType: '',
   recs: { items: [], loading: false, sig: '', error: '' }
 };
 const imdbMap = load(LS_IMDBMAP, {});
@@ -269,6 +270,9 @@ async function handleAction(action, el) {
     case 'check-seasons': return checkNewSeasons(true);
     case 'rec-viewer':
       state.recViewer = VIEWERS.includes(el.dataset.value) ? el.dataset.value : '';
+      return render();
+    case 'rec-type':
+      state.recType = ['movie', 'series'].includes(el.dataset.value) ? el.dataset.value : '';
       return render();
 
     case 'filter': {
@@ -678,7 +682,9 @@ async function loadRecs(force = false) {
         pool.set(t + x.id, e);
       });
     }
-    const top = [...pool.values()].sort((a, b) => b.score - a.score).slice(0, 30);
+    const sorted = [...pool.values()].sort((a, b) => b.score - a.score);
+    // keep enough of each type so both the movie and series sections get suggestions
+    const top = [...sorted.filter(e => e.t === 'movie').slice(0, 20), ...sorted.filter(e => e.t === 'tv').slice(0, 20)];
     const p = buildProfile();
     const out = [];
     for (let j = 0; j < top.length; j += 6) {
@@ -707,9 +713,19 @@ function renderRecommend() {
   const hasTmdb = !!localStorage.getItem(LS_TMDB);
   if (hasTmdb && liked.length && !r.loading && r.sig !== recSig(liked)) setTimeout(loadRecs);
 
-  const watchlist = state.items.filter(i => i.status === 'towatch').map(i => scoreItem(i, p)).sort((a, b) => b.s - a.s).slice(0, 10);
-  const candidates = SEED.filter(id => state.discover[id] && !byId(id)).map(id => scoreItem(state.discover[id], p)).sort((a, b) => b.s - a.s).slice(0, 12);
+  // a viewer sees titles marked for them or not assigned to anyone yet
+  const viewerOk = it => !state.recViewer || !viewersOf(it).length || viewersOf(it).includes(state.recViewer);
+  const watchlist = state.items.filter(i => i.status === 'towatch' && viewerOk(i)).map(i => scoreItem(i, p)).sort((a, b) => b.s - a.s);
+  const candidates = SEED.filter(id => state.discover[id] && !byId(id)).map(id => scoreItem(state.discover[id], p)).sort((a, b) => b.s - a.s);
   const missing = SEED.some(id => !state.discover[id] && !byId(id));
+
+  const byType = (entries, limit, toCard, emptyText) => [['movie', 'Филми'], ['series', 'Сериали']]
+    .filter(([t]) => !state.recType || state.recType === t)
+    .map(([t, label]) => {
+      const list = entries.filter(e => e.it.type === t).slice(0, limit);
+      return `<div class="subsection"><h3>${label} <span class="muted small">${list.length}</span></h3>
+        ${list.length ? `<div class="grid">${list.map(toCard).join('')}</div>` : `<p class="muted small">${emptyText}</p>`}</div>`;
+    }).join('');
 
   const tg2 = topEntries(p.genre), td = topEntries(p.director, 5), ta = topEntries(p.actors, 6);
   const chips = (arr, key, fn = x => x) => arr.length
@@ -717,7 +733,9 @@ function renderRecommend() {
     : '<span class="muted small">Още няма данни</span>';
 
   let html = `<div class="rec-for"><span class="muted">Препоръки за:</span>${['', ...VIEWERS].map(v =>
-    `<button class="chip toggle ${state.recViewer === v ? 'on' : ''}" data-action="rec-viewer" data-value="${esc(v)}">${v ? esc(v) : 'Всички'}</button>`).join('')}</div>`;
+    `<button class="chip toggle ${state.recViewer === v ? 'on' : ''}" data-action="rec-viewer" data-value="${esc(v)}">${v ? esc(v) : 'Всички'}</button>`).join('')}
+    <span class="muted rec-sep">Покажи:</span>${[['', 'Филми и сериали'], ['movie', 'Филми'], ['series', 'Сериали']].map(([v, label]) =>
+    `<button class="chip toggle ${state.recType === v ? 'on' : ''}" data-action="rec-type" data-value="${v}">${label}</button>`).join('')}</div>`;
   html += `<div class="section-title"><h2>Вашият вкус</h2></div>`;
   html += p.rated
     ? `<div class="panel taste">
@@ -734,23 +752,23 @@ function renderRecommend() {
   } else if (!liked.length) {
     html += `<div class="panel muted">${state.recViewer ? `Няма заглавия с ★★★ и повече, гледани от „${esc(state.recViewer)}“.` : 'Няма заглавия с ★★★ и повече.'} Предложения се дават само за заглавия, оценени с ★★★ или повече.</div>`;
   } else {
-    const recs = r.items.filter(x => !byId(x.it.imdbID)).slice(0, 18);
-    if (recs.length) html += `<div class="grid">${recs.map(x => card(x.it, { discover: true, reasons: x.because.slice(0, 2).map(t => `Като „${t}“`) })).join('')}</div>`;
+    const recs = r.items.filter(x => !byId(x.it.imdbID));
+    if (recs.length || !r.loading) html += byType(recs, 12, x => card(x.it, { discover: true, reasons: x.because.slice(0, 2).map(t => `Като „${t}“`) }),
+      r.loading ? 'Зареждане…' : 'Няма предложения — оценете с ★★★ или повече заглавия от този вид.');
     if (r.loading) html += '<div class="loader"></div>';
     else if (r.error) html += `<p class="hint error">${esc(r.error)}</p>`;
-    else if (!recs.length) html += '<div class="panel muted">Няма нови предложения — харесайте още заглавия.</div>';
   }
 
   html += `<div class="section-title"><h2>Гледайте следващо</h2><span class="muted small">от вашия списък</span></div>`;
   html += watchlist.length
-    ? `<div class="grid">${watchlist.map(r => card(r.it, { reasons: r.reasons })).join('')}</div>`
+    ? byType(watchlist, 10, x => card(x.it, { reasons: x.reasons }), 'Няма заглавия от този вид в „За гледане“.')
     : emptyState('Списъкът за гледане е празен', 'Добавете заглавия, за да получите препоръки.');
 
   html += `<div class="section-title"><h2>Открийте нещо ново</h2>
     ${p.rated ? `<button class="btn primary sm" data-action="discover-taste">Намери нови по моя вкус</button>` : ''}
     ${missing ? `<button class="btn ghost sm" data-action="load-discover" ${state.loadingDiscover ? 'disabled' : ''}>${state.loadingDiscover ? 'Зареждане...' : 'Зареди предложения от IMDb'}</button>` : ''}</div>`;
   html += state.loadingDiscover && !candidates.length ? '<div class="loader"></div>'
-    : candidates.length ? `<div class="grid">${candidates.map(r => card(r.it, { discover: true, reasons: r.reasons })).join('')}</div>`
+    : candidates.length ? byType(candidates, 8, x => card(x.it, { discover: true, reasons: x.reasons }), 'Няма заглавия от този вид.')
     : `<div class="panel muted">Натиснете „Зареди предложения“, за да получите топ заглавия от IMDb, подредени според вашия вкус.</div>`;
 
   c.innerHTML = html;
