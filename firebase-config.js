@@ -12,9 +12,6 @@ export const firebaseConfig = {
 // Shared list name for the family.
 export const HOUSEHOLD = 'family';
 
-// Google accounts allowed to sign in (lowercase). Must match the list in firestore.rules,
-// which is the real enforcement — this one only shows a friendly message.
-export const ALLOWED_EMAILS = [
-  'person1@gmail.com',
-  'person2@gmail.com'
-];
+// Optional: Google accounts allowed to sign in (lowercase), only for a quicker "no access" message.
+// Left empty on purpose so the addresses are not public; the real check is in the Firestore rules.
+export const ALLOWED_EMAILS = [];

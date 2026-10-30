@@ -105,7 +105,7 @@ flowchart LR
 2. **Firebase** — <https://console.firebase.google.com>
    - Authentication → Sign-in method → **Google** → Enable
    - Firestore Database → Create (production mode) → Rules → поставете [`firestore.rules`](firestore.rules) с вашите имейли → Publish
-   - Project settings → Your apps → Web → копирайте `firebaseConfig` във [`firebase-config.js`](firebase-config.js) и попълнете `ALLOWED_EMAILS`
+   - Project settings → Your apps → Web → копирайте `firebaseConfig` във [`firebase-config.js`](firebase-config.js) (`ALLOWED_EMAILS` е по желание — празен, за да не са публични имейлите)
    - Authentication → Settings → Authorized domains → добавете `<потребител>.github.io`
 3. **GitHub Pages** — Settings → Pages → Deploy from branch → `main` / `root`.
 4. Отворете сайта, влезте с Google и въведете OMDb и TMDB ключовете в **Настройки** (веднъж — синхронизират се към всички устройства).

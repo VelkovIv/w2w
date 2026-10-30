@@ -105,7 +105,7 @@ No server and no build step — plain HTML, CSS and JavaScript, hosted on GitHub
 2. **Firebase** — <https://console.firebase.google.com>
    - Authentication → Sign-in method → **Google** → Enable
    - Firestore Database → Create (production mode) → Rules → paste [`firestore.rules`](firestore.rules) with your emails → Publish
-   - Project settings → Your apps → Web → copy `firebaseConfig` into [`firebase-config.js`](firebase-config.js) and fill in `ALLOWED_EMAILS`
+   - Project settings → Your apps → Web → copy `firebaseConfig` into [`firebase-config.js`](firebase-config.js) (`ALLOWED_EMAILS` is optional — left empty so the emails are not public)
    - Authentication → Settings → Authorized domains → add `<user>.github.io`
 3. **GitHub Pages** — Settings → Pages → Deploy from branch → `main` / `root`.
 4. Open the site, sign in with Google and enter the OMDb and TMDB keys in **Settings** (once — they sync to all devices).
