@@ -52,7 +52,7 @@
       </button>
     </nav>
     <div class="side-stats" id="stats"></div>
-    <div class="version">W2W · v2.9.0</div>
+    <div class="version">W2W · v2.10.0</div>
   </aside>
 
   <main class="main">
@@ -101,13 +101,7 @@
           <option value="dislike" data-i18n="opinion.dislike">Нехаресани (★ – ★★)</option>
           <option value="none" data-i18n="opinion.none">Без оценка</option>
         </select>
-        <select id="f-viewer">
-          <option value="" data-i18n="viewer.all">Всички зрители</option>
-          <option value="Мариана">Мариана</option>
-          <option value="Ивайло">Ивайло</option>
-          <option value="Семейно">Семейно</option>
-          <option value="none" data-i18n="viewer.none">Без отбелязано</option>
-        </select>
+        <select id="f-viewer"></select>
         <select id="f-sort">
           <option value="added" data-i18n="sort.added">Последно добавени</option>
           <option value="rating" data-i18n="sort.rating">Най-висок рейтинг</option>
@@ -224,6 +218,15 @@
       <div class="account" id="account-box" hidden>
         <span><span data-i18n="account.signedIn">Влезли сте като</span> <b id="account-email"></b><br><small class="muted" data-i18n="account.sync">Списъците и ключовете се синхронизират между устройствата</small></span>
         <button class="btn ghost sm" id="account-signout" data-i18n="signout">Изход</button>
+      </div>
+      <div class="field">
+        <span data-i18n="viewers.h">Кой гледа</span>
+        <div class="viewer-list" id="viewer-list"></div>
+        <div class="add-bar" id="viewer-add-row">
+          <input id="viewer-new" maxlength="20" class="grow" data-i18n-ph="viewers.newPh" placeholder="Ново име, напр. Деца">
+          <button class="btn primary" data-action="viewer-add" data-i18n="viewers.add">Добави</button>
+        </div>
+        <small class="muted" data-i18n="viewers.help">Имената се показват на картите в „Гледали“. Промените важат за всички устройства.</small>
       </div>
       <label class="field">
         <span data-i18n="omdb.label">OMDb API ключ (данни и рейтинги от IMDb)</span>

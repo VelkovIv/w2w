@@ -242,6 +242,16 @@ button.chip:hover { border-color: var(--accent); color: var(--text); }
 .viewer.v0.on { background: #ec4899; }
 .viewer.v1.on { background: #3b82f6; }
 .viewer.v2.on { background: #f59e0b; }
+.viewer.v3.on { background: #22c55e; }
+.viewer.v4.on { background: #06b6d4; }
+.viewer.v5.on { background: #ef4444; }
+.viewer.v6.on { background: #a855f7; }
+.viewers { flex-wrap: wrap; }
+.viewer-list { display: grid; gap: 8px; }
+.viewer-row { display: flex; align-items: center; gap: 10px; }
+.viewer-row .viewer { cursor: default; flex-shrink: 0; display: grid; place-items: center; }
+.viewer-row input { min-width: 0; }
+.viewer-row .muted { white-space: nowrap; }
 .rec-for { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
 .rec-sep { margin-left: 12px; }
 .subsection { margin-bottom: 22px; }

@@ -9,7 +9,29 @@ const LS_IMDBMAP = 'cinelist.imdbmap';
 const LS_TMDBMAP = 'cinelist.tmdbmap';
 const LS_SIDEBAR = 'cinelist.sidebarPinned';
 
-const VIEWERS = ['Мариана', 'Ивайло', 'Семейно'];
+const LS_VIEWERS = 'cinelist.viewers';
+// ids of the first three are their original Bulgarian names, so existing marks keep working
+const DEFAULT_VIEWERS = [{ id: 'Мариана', name: 'Мариана', color: 0 }, { id: 'Ивайло', name: 'Ивайло', color: 1 }, { id: 'Семейно', name: 'Семейно', color: 2 }];
+const MAX_VIEWERS = 8;
+const VIEWER_COLORS = 7;
+
+function cleanViewers(list) {
+  if (!Array.isArray(list)) return null;
+  const seen = new Set();
+  const out = list.filter(v => v && typeof v.id === 'string' && v.id && v.id.length <= 40 && typeof v.name === 'string' && v.name.trim() && !seen.has(v.id) && seen.add(v.id))
+    .slice(0, MAX_VIEWERS)
+    .map((v, i) => ({ id: v.id, name: v.name.trim().slice(0, 20), color: Number.isInteger(v.color) && v.color >= 0 && v.color < VIEWER_COLORS ? v.color : i % VIEWER_COLORS }));
+  return out;
+}
+let VIEWERS_LIST = (() => { try { return cleanViewers(JSON.parse(localStorage.getItem(LS_VIEWERS))); } catch { return null; } })()
+  || DEFAULT_VIEWERS.map(v => ({ ...v }));
+const viewerIds = () => VIEWERS_LIST.map(v => v.id);
+const viewerName = id => {
+  const v = VIEWERS_LIST.find(x => x.id === id);
+  if (!v) return id;
+  // untouched default names get their English label
+  return (LANG === 'en' && v.name === v.id && VIEWER_LABELS[v.id]?.en) || v.name;
+};
 
 // IMDb genre name -> TMDB genre ids (movie, tv); null = no TV equivalent
 const GENRES = [
@@ -270,9 +292,11 @@ async function handleAction(action, el) {
     }
     case 'toggle-filters': return $('.sticky-head').classList.toggle('expanded');
     case 'toggle-lang': return setLang(LANG === 'bg' ? 'en' : 'bg');
+    case 'viewer-add': return addViewer();
+    case 'viewer-remove': return removeViewer(el.dataset.value);
     case 'check-seasons': return checkNewSeasons(true);
     case 'rec-viewer':
-      state.recViewer = VIEWERS.includes(el.dataset.value) ? el.dataset.value : '';
+      state.recViewer = viewerIds().includes(el.dataset.value) ? el.dataset.value : '';
       return render();
     case 'rec-type':
       state.recType = ['movie', 'series'].includes(el.dataset.value) ? el.dataset.value : '';
@@ -336,7 +360,7 @@ async function handleAction(action, el) {
     }
     case 'toggle-viewer': {
       const v = el.dataset.value;
-      if (!VIEWERS.includes(v)) return;
+      if (!viewerIds().includes(v)) return;
       const cur = viewersOf(it);
       it.viewers = cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v];
       break;
@@ -542,8 +566,8 @@ function card(it, { discover = false, reasons = [] } = {}) {
          : `<button class="icon-btn" data-action="unwatch" data-id="${id}" title="${t('btn.moveBack')}">${ICON.undo}</button>`}
        <button class="icon-btn danger" data-action="remove" data-id="${id}" title="${t('btn.delete')}">${ICON.trash}</button>`;
 
-  const viewers = discover ? '' : `<div class="viewers"><span>${t('viewers.label')}</span>${VIEWERS.map((v, n) =>
-    `<button class="viewer v${n} ${viewersOf(it).includes(v) ? 'on' : ''}" data-action="toggle-viewer" data-id="${id}" data-value="${esc(v)}" title="${esc(vl(v))}">${esc(vl(v).charAt(0))}</button>`).join('')}</div>`;
+  const viewers = discover ? '' : `<div class="viewers"><span>${t('viewers.label')}</span>${VIEWERS_LIST.map(v =>
+    `<button class="viewer v${v.color} ${viewersOf(it).includes(v.id) ? 'on' : ''}" data-action="toggle-viewer" data-id="${id}" data-value="${esc(v.id)}" title="${esc(viewerName(v.id))}">${esc(viewerName(v.id).charAt(0))}</button>`).join('')}</div>`;
   return `<article class="card${own ? ' owned' : ''}" data-action="open" data-id="${id}">
     <div class="poster">${posterHtml(it)}${rating}${op}${progress}<span class="badge type">${typeLabel(it.type)}</span></div>
     <div class="card-body">
@@ -590,8 +614,8 @@ function openDetail(id) {
         <dl>
           <dt>${it.type === 'series' ? t('detail.creators') : t('detail.director')}</dt><dd>${chipList(it.director, 'director')}</dd>
           <dt>${t('detail.actors')}</dt><dd>${chipList(it.actors, 'actor')}</dd>
-          ${inList ? `<dt>${t('detail.watchedBy')}</dt><dd><div class="chips">${VIEWERS.map(v =>
-            `<button class="chip toggle ${viewersOf(it).includes(v) ? 'on' : ''}" data-action="toggle-viewer" data-id="${eid}" data-value="${esc(v)}">${esc(vl(v))}</button>`).join('')}</div></dd>` : ''}
+          ${inList ? `<dt>${t('detail.watchedBy')}</dt><dd><div class="chips">${viewerIds().map(v =>
+            `<button class="chip toggle ${viewersOf(it).includes(v) ? 'on' : ''}" data-action="toggle-viewer" data-id="${eid}" data-value="${esc(v)}">${esc(viewerName(v))}</button>`).join('')}</div></dd>` : ''}
         </dl>
         ${inList ? `<div class="my-rating"><span class="muted">${t('detail.myRating')}</span>${starsHtml(it, 'lg')}</div>${seasonHtml(it)}
           <label class="comment-box"><span class="muted">${t('detail.comment')}</span>
@@ -729,8 +753,8 @@ function renderRecommend() {
     ? `<div class="chips">${arr.map(v => `<button class="chip" data-action="filter" data-key="${key}" data-value="${esc(v)}">${esc(fn(v))}</button>`).join('')}</div>`
     : `<span class="muted small">${t('rec.noData')}</span>`;
 
-  let html = `<div class="rec-for"><span class="muted">${t('rec.for')}</span>${['', ...VIEWERS].map(v =>
-    `<button class="chip toggle ${state.recViewer === v ? 'on' : ''}" data-action="rec-viewer" data-value="${esc(v)}">${v ? esc(vl(v)) : t('rec.everyone')}</button>`).join('')}
+  let html = `<div class="rec-for"><span class="muted">${t('rec.for')}</span>${['', ...viewerIds()].map(v =>
+    `<button class="chip toggle ${state.recViewer === v ? 'on' : ''}" data-action="rec-viewer" data-value="${esc(v)}">${v ? esc(viewerName(v)) : t('rec.everyone')}</button>`).join('')}
     <span class="muted rec-sep">${t('rec.show')}</span>${[['', t('type.both')], ['movie', t('rec.movies')], ['series', t('rec.series')]].map(([v, label]) =>
     `<button class="chip toggle ${state.recType === v ? 'on' : ''}" data-action="rec-type" data-value="${v}">${label}</button>`).join('')}</div>`;
   html += `<div class="section-title"><h2>${t('rec.taste')}</h2></div>`;
@@ -747,7 +771,7 @@ function renderRecommend() {
   if (!hasTmdb) {
     html += `<div class="panel muted">${t('rec.needTmdb')}</div>`;
   } else if (!liked.length) {
-    html += `<div class="panel muted">${state.recViewer ? esc(t('rec.noLikedFor', { name: vl(state.recViewer) })) : t('rec.noLiked')} ${t('rec.onlyLiked')}</div>`;
+    html += `<div class="panel muted">${state.recViewer ? esc(t('rec.noLikedFor', { name: viewerName(state.recViewer) })) : t('rec.noLiked')} ${t('rec.onlyLiked')}</div>`;
   } else {
     const recs = r.items.filter(x => !byId(x.it.imdbID));
     if (recs.length || !r.loading) html += byType(recs, 12, x => card(x.it, { discover: true, reasons: x.because.slice(0, 2).map(title => t('reason.like', { title })) }),
@@ -1120,8 +1144,86 @@ function resultRow(r) {
 function openSettings() {
   $('#api-key').value = localStorage.getItem(LS_KEY) || '';
   $('#tmdb-key').value = localStorage.getItem(LS_TMDB) || '';
+  renderViewerList();
   openModal('settings');
 }
+
+/* ---------- Viewers (who watched) ---------- */
+function renderViewerOptions() {
+  const sel = $('#f-viewer');
+  sel.innerHTML = `<option value="">${t('viewer.all')}</option>` +
+    VIEWERS_LIST.map(v => `<option value="${esc(v.id)}">${esc(viewerName(v.id))}</option>`).join('') +
+    `<option value="none">${t('viewer.none')}</option>`;
+  sel.value = state.f.viewer;
+  if (sel.value !== state.f.viewer) { state.f.viewer = ''; sel.value = ''; }
+}
+
+function renderViewerList() {
+  const count = id => state.items.filter(i => viewersOf(i).includes(id)).length;
+  $('#viewer-list').innerHTML = VIEWERS_LIST.map(v => `
+    <div class="viewer-row">
+      <span class="viewer on v${v.color}">${esc(viewerName(v.id).charAt(0))}</span>
+      <input class="grow" maxlength="20" data-viewer-id="${esc(v.id)}" value="${esc(viewerName(v.id))}">
+      <span class="muted small">${t('viewers.count', { n: count(v.id) })}</span>
+      <button class="icon-btn danger" data-action="viewer-remove" data-value="${esc(v.id)}" title="${t('viewers.remove')}">${ICON.trash}</button>
+    </div>`).join('');
+  $('#viewer-add-row').hidden = VIEWERS_LIST.length >= MAX_VIEWERS;
+}
+
+function validViewerName(name, exceptId = null) {
+  const n = name.trim();
+  if (!n) { toast(t('viewers.errEmpty'), 'error'); return null; }
+  if (VIEWERS_LIST.some(v => v.id !== exceptId && viewerName(v.id).toLowerCase() === n.toLowerCase())) { toast(t('viewers.errDup'), 'error'); return null; }
+  return n.slice(0, 20);
+}
+
+function viewersChanged() {
+  localStorage.setItem(LS_VIEWERS, JSON.stringify(VIEWERS_LIST));
+  window.W2W?.onViewersChanged?.();
+  renderViewerList();
+  renderViewerOptions();
+  render();
+}
+
+function addViewer() {
+  if (VIEWERS_LIST.length >= MAX_VIEWERS) { toast(t('viewers.errMax', { n: MAX_VIEWERS }), 'error'); return; }
+  const input = $('#viewer-new');
+  const name = validViewerName(input.value);
+  if (!name) return;
+  const used = new Set(VIEWERS_LIST.map(v => v.color));
+  const color = [...Array(VIEWER_COLORS).keys()].find(c => !used.has(c)) ?? VIEWERS_LIST.length % VIEWER_COLORS;
+  VIEWERS_LIST.push({ id: 'v' + Date.now().toString(36), name, color });
+  input.value = '';
+  viewersChanged();
+  toast(t('viewers.added', { name }));
+}
+
+function renameViewer(id, value, input) {
+  const v = VIEWERS_LIST.find(x => x.id === id);
+  if (!v) return;
+  const name = validViewerName(value, id);
+  if (!name) { input.value = viewerName(id); return; }
+  if (name === viewerName(id)) return;
+  v.name = name;
+  viewersChanged();
+}
+
+function removeViewer(id) {
+  const v = VIEWERS_LIST.find(x => x.id === id);
+  if (!v) return;
+  const marked = state.items.filter(i => viewersOf(i).includes(id));
+  if (!confirm(t('viewers.confirmRemove', { name: viewerName(id), n: marked.length }))) return;
+  VIEWERS_LIST = VIEWERS_LIST.filter(x => x.id !== id);
+  marked.forEach(i => { i.viewers = viewersOf(i).filter(x => x !== id); });
+  if (marked.length) save();
+  if (state.recViewer === id) state.recViewer = '';
+  viewersChanged();
+}
+
+document.addEventListener('change', e => {
+  if (e.target.matches?.('[data-viewer-id]')) renameViewer(e.target.dataset.viewerId, e.target.value, e.target);
+});
+$('#viewer-new').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addViewer(); } });
 
 function setLang(lang) {
   LANG = lang === 'en' ? 'en' : 'bg';
@@ -1134,7 +1236,7 @@ function setLang(lang) {
 // static texts + labels built from data (genres, viewer names)
 function localize() {
   applyI18n();
-  $$('#f-viewer option').forEach(o => { if (VIEWERS.includes(o.value)) o.textContent = vl(o.value); });
+  renderViewerOptions();
   renderGenreChips();
   $('#lang-flag').innerHTML = FLAGS[LANG];
   $('#lang-name').textContent = LANG === 'en' ? 'English' : 'Български';
@@ -1223,7 +1325,7 @@ $('#import-file').addEventListener('change', async e => {
         totalSeasons: Number.isInteger(d.totalSeasons) ? d.totalSeasons : null,
         seenSeasons: Number.isInteger(d.seenSeasons) ? d.seenSeasons : null,
         newSeason: !!d.newSeason,
-        viewers: arr(d.viewers).filter(v => VIEWERS.includes(v)),
+        viewers: arr(d.viewers).filter(v => viewerIds().includes(v)),
         addedAt: Number(d.addedAt) || Date.now(), watchedAt: Number(d.watchedAt) || null
       });
       added++;
@@ -1347,6 +1449,16 @@ window.W2W = {
   t,
   items: () => state.items,
   keys: () => ({ omdb: localStorage.getItem(LS_KEY) || '', tmdb: localStorage.getItem(LS_TMDB) || '' }),
+  viewers: () => VIEWERS_LIST,
+  setViewers(list) {
+    const clean = cleanViewers(list);
+    if (!clean || !clean.length) return;
+    VIEWERS_LIST = clean;
+    localStorage.setItem(LS_VIEWERS, JSON.stringify(VIEWERS_LIST));
+    if (!started) return;
+    renderViewerOptions();
+    render();
+  },
   setKeys({ omdb, tmdb }) {
     if (omdb) localStorage.setItem(LS_KEY, omdb);
     if (tmdb) localStorage.setItem(LS_TMDB, tmdb);
@@ -1364,7 +1476,8 @@ window.W2W = {
     [LS_ITEMS, LS_KEY, LS_TMDB].forEach(k => localStorage.removeItem(k));
   },
   onLocalSave: null,
-  onKeysChanged: null
+  onKeysChanged: null,
+  onViewersChanged: null
 };
 
 // cloud.js sets this flag; if it failed to load at all, run locally

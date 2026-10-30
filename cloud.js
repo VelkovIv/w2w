@@ -47,6 +47,7 @@ async function initCloud() {
 
   let synced = new Map();
   let unsub = null;
+  let unsubSettings = null;
   let timer = null;
 
   $('#auth-google').onclick = async () => {
@@ -75,9 +76,12 @@ async function initCloud() {
   function stopSync() {
     unsub?.();
     unsub = null;
+    unsubSettings?.();
+    unsubSettings = null;
     clearTimeout(timer);
     app().onLocalSave = null;
     app().onKeysChanged = null;
+    app().onViewersChanged = null;
   }
 
   async function pushChanges() {
@@ -136,14 +140,24 @@ async function initCloud() {
     const s = await F.getDoc(settingsRef);
     if (s.exists()) {
       app().setKeys(s.data());
+      if (Array.isArray(s.data().viewers)) app().setViewers(s.data().viewers);
+      else await F.setDoc(settingsRef, { viewers: app().viewers() }, { merge: true });
     } else {
       const k = Object.fromEntries(Object.entries(app().keys()).filter(([, v]) => v));
-      if (Object.keys(k).length) await F.setDoc(settingsRef, k, { merge: true });
+      await F.setDoc(settingsRef, { ...k, viewers: app().viewers() }, { merge: true });
     }
     app().onKeysChanged = () => {
       const k = Object.fromEntries(Object.entries(app().keys()).filter(([, v]) => v));
       F.setDoc(settingsRef, k, { merge: true }).catch(() => {});
     };
+    app().onViewersChanged = () => {
+      F.setDoc(settingsRef, { viewers: app().viewers() }, { merge: true })
+        .catch(err => app().toast(app().t('cloud.syncError', { msg: err.message }), 'error'));
+    };
+    // viewer names edited on another device show up here without a reload
+    unsubSettings = F.onSnapshot(settingsRef, snap => {
+      if (Array.isArray(snap.data()?.viewers)) app().setViewers(snap.data().viewers);
+    }, () => {});
     app().onLocalSave = scheduleSync;
 
     let first = true;
