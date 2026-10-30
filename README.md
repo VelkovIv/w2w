@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="logo.svg" width="96" alt="W2W logo">
+  <img src="logo-full.svg" width="160" alt="W2W — What2Watch">
 </p>
 
-<h1 align="center">W2W — What to Watch</h1>
+<h1 align="center">W2W — What2Watch</h1>
 
 <p align="center">
   Семейно приложение за филми и сериали: какво да гледаме, какво сме гледали, как ни е харесало и какво да пуснем следващо.

@@ -336,7 +336,7 @@ button.chip:hover { border-color: var(--accent); color: var(--text); }
   padding: 36px 28px; border-radius: 24px; background: var(--bg2); border: 1px solid var(--border); box-shadow: var(--shadow);
 }
 .auth-card > div { width: 100%; display: grid; gap: 12px; }
-.auth-logo { width: 72px; height: 72px; border-radius: 20px; box-shadow: 0 12px 30px -8px rgba(124, 92, 255, .8); }
+.auth-logo { width: 150px; height: 150px; border-radius: 34px; box-shadow: 0 16px 40px -12px rgba(124, 92, 255, .7); margin-bottom: 6px; }
 .auth-card h1 { font-size: 1.8rem; font-weight: 800; letter-spacing: -.02em; }
 .btn.wide { width: 100%; }
 .account {

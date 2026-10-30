@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#151a33"/>
+      <stop offset="1" stop-color="#080a15"/>
+    </linearGradient>
+    <linearGradient id="w" gradientUnits="userSpaceOnUse" x1="120" y1="0" x2="380" y2="0">
+      <stop offset="0" stop-color="#38bdf8"/>
+      <stop offset=".45" stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="play" gradientUnits="userSpaceOnUse" x1="400" y1="70" x2="330" y2="165">
+      <stop offset="0" stop-color="#ec4899"/>
+      <stop offset="1" stop-color="#8b5cf6"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+
+  <!-- W: left stroke is a film strip, right arm ends in a play button -->
+  <g>
+    <polyline points="146,86 210,286 256,168 302,286 340,150" fill="none" stroke="url(#w)" stroke-width="50" stroke-linejoin="round"/>
+    <g fill="#0b0f1e">
+      <rect x="-7" y="-5.5" width="14" height="11" rx="2" transform="translate(141.3 114) rotate(72.3)"/>
+      <rect x="-7" y="-5.5" width="14" height="11" rx="2" transform="translate(152.8 150) rotate(72.3)"/>
+      <rect x="-7" y="-5.5" width="14" height="11" rx="2" transform="translate(164.3 186) rotate(72.3)"/>
+      <rect x="-7" y="-5.5" width="14" height="11" rx="2" transform="translate(175.8 222) rotate(72.3)"/>
+      <rect x="-7" y="-5.5" width="14" height="11" rx="2" transform="translate(187.4 258) rotate(72.3)"/>
+    </g>
+    <polygon points="308,80 404,134 316,190" fill="url(#play)" stroke="url(#play)" stroke-width="14" stroke-linejoin="round"/>
+  </g>
+
+  <!-- W2W drawn as paths so it looks the same on every device -->
+  <g transform="translate(256 402) scale(0.85) translate(-256 -412)" fill="none" stroke="#f8fafc" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="97,329 121,399 144,352 167,399 191,329" stroke-width="26"/>
+    <path d="M232 348 C232 322 282 320 282 348 C282 368 258 378 232 400 L282 400" stroke-width="24"/>
+    <polyline points="321,329 345,399 368,352 391,399 415,329" stroke-width="26"/>
+  </g>
+  <text x="256" y="454" text-anchor="middle" fill="#e5e7eb" font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="30" font-weight="600" letter-spacing="5">What2Watch</text>
+</svg>
