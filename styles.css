@@ -208,16 +208,32 @@ button.chip:hover { border-color: var(--accent); color: var(--text); }
 .viewer.v1.on { background: #3b82f6; }
 .viewer.v2.on { background: #f59e0b; }
 .rec-for { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
-.stars { display: flex; gap: 1px; }
+.stars { display: flex; align-items: center; gap: 2px; }
 .star {
-  background: none; border: 0; padding: 0 1px; cursor: pointer;
-  font-size: 1.1rem; line-height: 1; color: rgba(255, 255, 255, .18); transition: color .12s, transform .12s;
+  position: relative; display: inline-block; font-size: 1.15rem; line-height: 1;
+  color: rgba(255, 255, 255, .18); user-select: none;
 }
-.star.on { color: var(--warn); }
-.stars:hover .star { color: var(--warn); }
-.stars .star:hover ~ .star { color: rgba(255, 255, 255, .18); }
-.star:hover { transform: scale(1.2); }
-.stars.lg .star { font-size: 1.6rem; padding: 0 2px; }
+.star.full { color: var(--warn); }
+.star.half {
+  background: linear-gradient(90deg, var(--warn) 50%, rgba(255, 255, 255, .18) 50%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.star .hit { position: absolute; top: -3px; bottom: -3px; width: 50%; padding: 0; border: 0; background: none; cursor: pointer; }
+.star .hit.l { left: 0; }
+.star .hit.r { right: 0; }
+.stars-val { font-size: .75rem; color: var(--muted); margin-left: 6px; }
+.stars.lg .star { font-size: 1.7rem; }
+.stars.lg .stars-val { font-size: .95rem; }
+.comment-preview {
+  font-size: .76rem; font-style: italic; color: #c9ccdb; line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.comment-box { display: grid; gap: 6px; }
+.comment-box textarea {
+  font: inherit; font-size: .9rem; color: var(--text); resize: vertical; min-height: 70px;
+  background: rgba(0, 0, 0, .25); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; outline: none;
+}
+.comment-box textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124, 92, 255, .2); }
 .my-rating { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .badge.op.stars-badge { width: auto; height: 26px; padding: 0 9px; border-radius: 99px; color: #fff; font-size: .78rem; }
 .badge.progress { bottom: 10px; right: 10px; background: var(--good); color: #fff; font-size: .68rem; }
@@ -368,9 +384,6 @@ button.chip:hover { border-color: var(--accent); color: var(--text); }
 @media (hover: none) {
   .card:hover { transform: none; box-shadow: none; }
   .card:hover .poster img { transform: none; }
-  .star:hover { transform: none; }
-  .stars:hover .star { color: rgba(255, 255, 255, .18); }
-  .stars:hover .star.on { color: var(--warn); }
 }
 
 @media (max-width: 860px) {

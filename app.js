@@ -118,8 +118,28 @@ const recCache = new Map();
 const viewersOf = it => Array.isArray(it.viewers) ? it.viewers : [];
 const isLiked = it => it.stars ? it.stars >= 3 : it.opinion === 'like';
 
-const starsHtml = (it, cls = '') => `<div class="stars ${cls}" title="Моята оценка">${[1, 2, 3, 4, 5].map(n =>
-  `<button class="star ${(it.stars || 0) >= n ? 'on' : ''}" data-action="rate" data-id="${esc(it.imdbID)}" data-value="${n}" title="${n} от 5">★</button>`).join('')}</div>`;
+const starClass = (v, n) => v >= n ? 'full' : v >= n - 0.5 ? 'half' : '';
+const starsHtml = (it, cls = '') => {
+  const id = esc(it.imdbID);
+  const v = it.stars || 0;
+  return `<div class="stars ${cls}" title="Моята оценка" data-value="${v}">${[1, 2, 3, 4, 5].map(n =>
+    `<span class="star ${starClass(v, n)}">★<button class="hit l" data-action="rate" data-id="${id}" data-value="${n - 0.5}" title="${n - 0.5} от 5"></button><button class="hit r" data-action="rate" data-id="${id}" data-value="${n}" title="${n} от 5"></button></span>`).join('')}${v ? `<span class="stars-val">${v}</span>` : ''}</div>`;
+};
+
+function paintStars(box, v) {
+  box.querySelectorAll('.star').forEach((s, i) => {
+    s.classList.toggle('full', v >= i + 1);
+    s.classList.toggle('half', v < i + 1 && v >= i + 0.5);
+  });
+}
+document.addEventListener('mouseover', e => {
+  const hit = e.target.closest('.stars .hit');
+  if (hit) paintStars(hit.closest('.stars'), parseFloat(hit.dataset.value));
+});
+document.addEventListener('mouseout', e => {
+  const box = e.target.closest('.stars');
+  if (box && !box.contains(e.relatedTarget)) paintStars(box, parseFloat(box.dataset.value) || 0);
+});
 
 const statusInfo = it => it.status === 'watched' ? ['watched', 'В „Гледани“']
   : it.watching ? ['watching', 'Гледам в момента'] : ['towatch', 'В „За гледане“'];
@@ -296,8 +316,8 @@ async function handleAction(action, el) {
       toast(`„${it.title}“ е преместен в „За гледане“`);
       break;
     case 'rate': {
-      const n = parseInt(el.dataset.value, 10);
-      if (!(n >= 1 && n <= 5)) return;
+      const n = parseFloat(el.dataset.value);
+      if (!(n >= 0.5 && n <= 5 && Number.isInteger(n * 2))) return;
       if (it.stars === n) {
         it.stars = null;
         it.opinion = null;
@@ -385,7 +405,7 @@ function filtered() {
 
   const list = state.items.filter(i =>
     i.status === state.view &&
-    (!q || i.title.toLowerCase().includes(q) || has(i.actors, q) || has(i.director, q) || has(i.genre.map(tg), q) || has(i.genre, q)) &&
+    (!q || i.title.toLowerCase().includes(q) || (i.comment || '').toLowerCase().includes(q) || has(i.actors, q) || has(i.director, q) || has(i.genre.map(tg), q) || has(i.genre, q)) &&
     (!actor || has(i.actors, actor)) &&
     (!director || has(i.director, director)) &&
     (!f.genre || i.genre.includes(f.genre)) &&
@@ -452,8 +472,8 @@ function render() {
 function renderStats() {
   const towatch = state.items.filter(i => i.status === 'towatch').length;
   const watched = state.items.filter(i => i.status === 'watched');
-  const liked = watched.filter(i => i.opinion === 'like').length;
-  const disliked = watched.filter(i => i.opinion === 'dislike').length;
+  const liked = state.items.filter(i => i.opinion === 'like').length;
+  const disliked = state.items.filter(i => i.opinion === 'dislike').length;
   $('#count-towatch').textContent = towatch;
   $('#count-watched').textContent = watched.length;
   const pct = liked + disliked ? Math.round(liked / (liked + disliked) * 100) : 0;
@@ -533,6 +553,7 @@ function card(it, { discover = false, reasons = [] } = {}) {
       ${reasons.length ? `<div class="reasons">${reasons.map(r => `<span>${esc(r)}</span>`).join('')}</div>` : ''}
       ${viewers}
       ${discover ? '' : seasonHtml(it) + starsHtml(it)}
+      ${!discover && it.comment ? `<div class="comment-preview" title="${esc(it.comment)}">„${esc(it.comment)}“</div>` : ''}
       <div class="actions">${actions}</div>
     </div>
   </article>`;
@@ -571,7 +592,9 @@ function openDetail(id) {
           ${inList ? `<dt>Гледано от</dt><dd><div class="chips">${VIEWERS.map(v =>
             `<button class="chip toggle ${viewersOf(it).includes(v) ? 'on' : ''}" data-action="toggle-viewer" data-id="${eid}" data-value="${esc(v)}">${esc(v)}</button>`).join('')}</div></dd>` : ''}
         </dl>
-        ${inList ? `<div class="my-rating"><span class="muted">Моята оценка:</span>${starsHtml(it, 'lg')}</div>${seasonHtml(it)}` : ''}
+        ${inList ? `<div class="my-rating"><span class="muted">Моята оценка:</span>${starsHtml(it, 'lg')}</div>${seasonHtml(it)}
+          <label class="comment-box"><span class="muted">Коментар</span>
+            <textarea id="comment-input" data-id="${eid}" maxlength="1000" rows="3" placeholder="Какво ви хареса или не… (запазва се автоматично)">${esc(it.comment || '')}</textarea></label>` : ''}
         <div class="detail-actions">${actions}</div>
         ${isId(id) ? `<a href="https://www.imdb.com/title/${eid}/" target="_blank" rel="noopener noreferrer">Отвори в IMDb ↗</a>` : ''}
       </div>
@@ -585,7 +608,7 @@ function buildProfile(viewer = state.recViewer) {
   const p = { genre: new Map(), director: new Map(), actors: new Map(), rated: 0 };
   const add = (m, k, w) => m.set(k, (m.get(k) || 0) + w);
   state.items.forEach(it => {
-    if (it.status !== 'watched' || !it.opinion) return;
+    if (!it.opinion) return;
     if (viewer && !viewersOf(it).includes(viewer)) return;
     const w = it.stars ? (it.stars - 2.5) / 1.5 : (it.opinion === 'like' ? 1 : -1);
     p.rated++;
@@ -613,7 +636,7 @@ function topEntries(map, n = 6) {
 }
 
 const likedFor = viewer => state.items
-  .filter(i => i.status === 'watched' && isLiked(i) && (!viewer || viewersOf(i).includes(viewer)))
+  .filter(i => isLiked(i) && (!viewer || viewersOf(i).includes(viewer)))
   .sort((a, b) => (b.stars || 3) - (a.stars || 3) || (b.watchedAt || 0) - (a.watchedAt || 0))
   .slice(0, 10);
 const recSig = liked => state.recViewer + '|' + liked.map(i => i.imdbID + (i.stars || '')).join(',');
@@ -1154,7 +1177,8 @@ $('#import-file').addEventListener('change', async e => {
         runtime: String(d.runtime ?? ''), country: String(d.country ?? ''),
         status: d.status === 'watched' ? 'watched' : 'towatch',
         opinion: ['like', 'dislike'].includes(d.opinion) ? d.opinion : null,
-        stars: Number.isInteger(d.stars) && d.stars >= 1 ? Math.min(5, d.stars) : null,
+        stars: typeof d.stars === 'number' && d.stars >= 0.5 ? Math.min(5, Math.round(d.stars * 2) / 2) : null,
+        comment: typeof d.comment === 'string' ? d.comment.slice(0, 1000) : '',
         watching: !!d.watching,
         season: Number.isInteger(d.season) && d.season > 0 ? d.season : null,
         totalSeasons: Number.isInteger(d.totalSeasons) ? d.totalSeasons : null,
@@ -1212,6 +1236,22 @@ async function checkNewSeasons(manual = false) {
   else if (manual) toast('Няма нови сезони');
 }
 
+/* ---------- Comments ---------- */
+let commentTimer;
+document.addEventListener('input', e => {
+  if (e.target.id !== 'comment-input') return;
+  const id = e.target.dataset.id;
+  const text = e.target.value.slice(0, 1000);
+  clearTimeout(commentTimer);
+  commentTimer = setTimeout(() => {
+    const it = byId(id);
+    if (!it) return;
+    it.comment = text.trim() ? text : '';
+    save();
+    render();
+  }, 600);
+});
+
 /* ---------- Compact header on scroll ---------- */
 let scrollTicking = false;
 window.addEventListener('scroll', () => {
@@ -1261,7 +1301,8 @@ window.W2W = {
     saveLocal();
     if (!started) return;
     render();
-    if (state.detailId && !$('#modal-detail').hidden) openDetail(state.detailId);
+    // don't rebuild the detail while the user is typing a comment
+    if (state.detailId && !$('#modal-detail').hidden && document.activeElement?.id !== 'comment-input') openDetail(state.detailId);
   },
   clearLocal() {
     [LS_ITEMS, LS_KEY, LS_TMDB].forEach(k => localStorage.removeItem(k));
