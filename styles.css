@@ -71,12 +71,38 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .nav-btn.active svg { color: var(--accent); }
 .count { margin-left: auto; font-size: .75rem; padding: 2px 8px; border-radius: 99px; background: var(--panel-2); }
 
-.side-stats { margin-top: auto; display: grid; gap: 10px; }
-.stat { padding: 14px; border-radius: 14px; background: var(--panel); border: 1px solid var(--border); }
-.stat b { font-size: 1.3rem; display: block; }
-.stat span { font-size: .78rem; color: var(--muted); }
-.bar { height: 6px; border-radius: 6px; background: rgba(239, 68, 68, .5); overflow: hidden; margin-top: 8px; }
+.side-stats { margin-top: auto; display: grid; gap: 6px; }
+.stat { margin: 0; min-width: 0; padding: 0 12px 8px; border-radius: 12px; background: var(--panel); border: 1px solid var(--border); }
+.stat legend { padding: 0 6px; margin-left: -2px; font-size: .68rem; color: var(--muted); white-space: nowrap; }
+.stat b { font-size: 1.05rem; display: block; line-height: 1.2; }
+.bar { height: 5px; border-radius: 6px; background: rgba(239, 68, 68, .5); overflow: hidden; margin-top: 6px; }
 .bar i { display: block; height: 100%; background: var(--good); }
+
+.pin-btn {
+  margin-left: auto; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+  border: 1px solid transparent; background: none; color: var(--muted); cursor: pointer; transition: all .15s;
+}
+.pin-btn svg { width: 16px; height: 16px; }
+.pin-btn:hover { color: var(--text); background: var(--panel); }
+body.sb-pinned .pin-btn { color: var(--accent); background: rgba(124, 92, 255, .15); border-color: rgba(124, 92, 255, .4); }
+
+/* Desktop: the menu collapses to icons and opens on hover, unless pinned */
+@media (min-width: 861px) {
+  body { grid-template-columns: 74px 1fr; }
+  body.sb-pinned { grid-template-columns: 250px 1fr; }
+  .sidebar { width: 74px; overflow: hidden; z-index: 45; transition: width .2s ease, background .2s, box-shadow .2s; }
+  .sidebar:hover, .sidebar:has(:focus-visible), body.sb-pinned .sidebar { width: 250px; }
+  body:not(.sb-pinned) .sidebar:hover, body:not(.sb-pinned) .sidebar:has(:focus-visible) {
+    background: rgba(10, 11, 18, .97); box-shadow: 24px 0 40px -24px rgba(0, 0, 0, .9);
+  }
+  .brand, .nav-btn { white-space: nowrap; }
+  .brand { transition: padding .2s; }
+  .brand-text, .nav-btn span, .side-stats, .version, .pin-btn { transition: opacity .15s; }
+  body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) :is(.brand-text, .nav-btn span, .side-stats, .version, .pin-btn) {
+    opacity: 0; pointer-events: none;
+  }
+  body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .brand { padding: 0; }
+}
 
 /* ---------- Main ---------- */
 .main { padding: 0 clamp(16px, 4vw, 48px) 80px; min-width: 0; }

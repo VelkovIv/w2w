@@ -7,6 +7,7 @@ const LS_TMDB = 'cinelist.tmdbkey';
 const LS_CRITERIA = 'cinelist.criteria';
 const LS_IMDBMAP = 'cinelist.imdbmap';
 const LS_TMDBMAP = 'cinelist.tmdbmap';
+const LS_SIDEBAR = 'cinelist.sidebarPinned';
 
 const VIEWERS = ['Мариана', 'Ивайло', 'Семейно'];
 
@@ -266,6 +267,11 @@ async function handleAction(action, el) {
     case 'refresh-ratings': return refreshRatings(el);
     case 'load-discover': return loadDiscover();
     case 'load-recs': return loadRecs(true);
+    case 'toggle-sidebar': {
+      const pinned = document.body.classList.toggle('sb-pinned');
+      localStorage.setItem(LS_SIDEBAR, pinned ? '1' : '0');
+      return;
+    }
     case 'toggle-filters': return $('.sticky-head').classList.toggle('expanded');
     case 'check-seasons': return checkNewSeasons(true);
     case 'rec-viewer':
@@ -484,10 +490,10 @@ function renderStats() {
   const pct = liked + disliked ? Math.round(liked / (liked + disliked) * 100) : 0;
   const watching = state.items.filter(i => i.status === 'towatch' && i.watching).length;
   $('#stats').innerHTML = `
-    <div class="stat"><b>${watching}</b><span>гледам в момента</span></div>
-    <div class="stat"><b>${state.items.length}</b><span>заглавия общо</span></div>
-    <div class="stat"><b>${liked} / ${disliked}</b><span>харесани / нехаресани</span>
-      ${liked + disliked ? `<div class="bar"><i style="width:${pct}%"></i></div>` : ''}</div>`;
+    <fieldset class="stat"><legend>гледам в момента</legend><b>${watching}</b></fieldset>
+    <fieldset class="stat"><legend>заглавия общо</legend><b>${state.items.length}</b></fieldset>
+    <fieldset class="stat"><legend>харесани / нехаресани</legend><b>${liked} / ${disliked}</b>
+      ${liked + disliked ? `<div class="bar"><i style="width:${pct}%"></i></div>` : ''}</fieldset>`;
 }
 
 function emptyState(title, text, withButton = true) {
@@ -1304,6 +1310,7 @@ window.addEventListener('scroll', () => {
 }, { passive: true });
 
 /* ---------- Init ---------- */
+document.body.classList.toggle('sb-pinned', localStorage.getItem(LS_SIDEBAR) === '1');
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
