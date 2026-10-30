@@ -50,7 +50,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   display: flex; flex-direction: column; gap: 28px;
 }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.25rem; padding: 0 8px; letter-spacing: -.02em; }
-.logo { width: 42px; height: 42px; border-radius: 12px; box-shadow: 0 8px 22px -6px rgba(124, 92, 255, .8); }
+.logo { width: 42px; height: 42px; }
 .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
 .brand-text b {
   font-size: 1.45rem; font-weight: 800; letter-spacing: -.02em;
@@ -333,10 +333,10 @@ button.chip:hover { border-color: var(--accent); color: var(--text); }
 }
 .auth-card {
   width: min(380px, 100%); text-align: center; display: grid; gap: 12px; justify-items: center;
-  padding: 36px 28px; border-radius: 24px; background: var(--bg2); border: 1px solid var(--border); box-shadow: var(--shadow);
+  padding: 36px 28px; border-radius: 24px; background: var(--bg); border: 1px solid var(--border); box-shadow: var(--shadow);
 }
 .auth-card > div { width: 100%; display: grid; gap: 12px; }
-.auth-logo { width: 150px; height: 150px; border-radius: 34px; box-shadow: 0 16px 40px -12px rgba(124, 92, 255, .7); margin-bottom: 6px; }
+.auth-logo { width: 180px; height: 180px; margin-bottom: 6px; }
 .auth-card h1 { font-size: 1.8rem; font-weight: 800; letter-spacing: -.02em; }
 .btn.wide { width: 100%; }
 .account {
@@ -364,7 +364,7 @@ button.chip:hover { border-color: var(--accent); color: var(--text); }
 /* ---------- Responsive ---------- */
 .topbar-title { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .topbar-actions { display: flex; align-items: center; gap: 8px; }
-.mobile-logo { display: none; width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0; }
+.mobile-logo { display: none; width: 36px; height: 36px; flex-shrink: 0; }
 .compact-toggle { display: none; position: relative; }
 .compact-toggle.has-active::after {
   content: ''; position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%;

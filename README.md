@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo-full.svg" width="160" alt="W2W — What2Watch">
+  <img src="icon-512.png" width="180" alt="W2W — What2Watch">
 </p>
 
 <h1 align="center">W2W — What2Watch</h1>
