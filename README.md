@@ -1,8 +1,12 @@
 <p align="center">
-  <img src="icon-512.png" width="180" alt="W2W — What2Watch">
+  <b>🇧🇬 Български</b> · <a href="README.en.md">🇬🇧 English</a>
 </p>
 
-<h1 align="center">W2W — What2Watch</h1>
+<p align="center">
+  <img src="icon-512.png" width="180" alt="What 2 Watch">
+</p>
+
+<h1 align="center">What 2 Watch</h1>
 
 <p align="center">
   Семейно приложение за филми и сериали: какво да гледаме, какво сме гледали, как ни е харесало и какво да пуснем следващо.
