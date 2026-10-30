@@ -365,7 +365,11 @@ button.chip:hover { border-color: var(--accent); color: var(--text); }
 .topbar-title { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .topbar-actions { display: flex; align-items: center; gap: 8px; }
 .mobile-logo { display: none; width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0; }
-.compact-toggle { display: none; }
+.compact-toggle { display: none; position: relative; }
+.compact-toggle.has-active::after {
+  content: ''; position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent-2); box-shadow: 0 0 0 2px var(--bg);
+}
 
 /* Compact header while scrolling */
 .sticky-head, .sticky-head .topbar, .sticky-head .filters { transition: padding .2s ease, margin .2s ease; }
@@ -401,6 +405,13 @@ button.chip:hover { border-color: var(--accent); color: var(--text); }
   .sticky-head.compact { padding-top: calc(8px + env(safe-area-inset-top)); }
   .mobile-logo { display: block; }
   .btn-label { display: none; }
+  /* filters open with the funnel button */
+  .compact-toggle { display: inline-flex; width: 40px; height: 40px; padding: 0; }
+  .compact-toggle svg { width: 20px; height: 20px; }
+  .sticky-head.expanded .compact-toggle { background: var(--panel-2); border-color: var(--accent); color: var(--accent); }
+  .sticky-head.no-filters .compact-toggle { display: none; }
+  .sticky-head:not(.expanded) .filters { display: none; }
+  .sticky-head:not(.expanded) .topbar { margin-bottom: 0; }
   .topbar { flex-wrap: nowrap; align-items: center; }
   .topbar h1 { font-size: 1.4rem; }
   .topbar p { font-size: .8rem; }

@@ -464,6 +464,7 @@ function render() {
   $('#filters').hidden = state.view === 'recommend' || state.view === 'discover';
   $('#discover-panel').hidden = state.view !== 'discover';
   $('.sticky-head').classList.toggle('no-filters', state.view === 'recommend');
+  updateFilterDot();
   $('#f-opinion').hidden = state.view !== 'watched';
   $('#f-viewer').hidden = state.view !== 'watched';
   $('#f-progress').hidden = state.view !== 'towatch';
@@ -495,6 +496,7 @@ function emptyState(title, text, withButton = true) {
 }
 
 function renderList() {
+  updateFilterDot();
   const c = $('#content');
   const total = state.items.filter(i => i.status === state.view).length;
   const list = filtered();
@@ -981,6 +983,7 @@ async function runDiscover(reset) {
     return;
   }
   if (reset) Object.assign(d, { results: [], page: 0, more: true, tvList: null, error: '' });
+  if (reset && isMobile.matches) $('.sticky-head').classList.remove('expanded');
   d.loading = true;
   render();
   const c = d.criteria;
@@ -1048,7 +1051,7 @@ function renderDiscover() {
 }
 
 const CRIT_INPUTS = { keyword: '#d-keyword', studio: '#d-studio', type: '#d-type', actor: '#d-actor', director: '#d-director', minRating: '#d-rating', yearFrom: '#d-year-from', yearTo: '#d-year-to', lang: '#d-lang', sort: '#d-sort' };
-const saveCriteria = () => localStorage.setItem(LS_CRITERIA, JSON.stringify(state.disc.criteria));
+const saveCriteria = () => { localStorage.setItem(LS_CRITERIA, JSON.stringify(state.disc.criteria)); updateFilterDot(); };
 
 function syncCriteriaInputs() {
   const c = state.disc.criteria;
@@ -1271,6 +1274,16 @@ document.addEventListener('input', e => {
 });
 
 /* ---------- Compact header on scroll ---------- */
+const isMobile = window.matchMedia('(max-width: 860px)');
+
+// dot on the funnel button when any filter differs from the default
+function updateFilterDot() {
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const active = state.view === 'discover'
+    ? Object.entries(defaultCriteria()).some(([k, v]) => !same(state.disc.criteria[k], v))
+    : Object.entries(defaultFilters()).some(([k, v]) => k !== 'sort' && !same(state.f[k], v));
+  $('.compact-toggle').classList.toggle('has-active', active);
+}
 let scrollTicking = false;
 window.addEventListener('scroll', () => {
   if (scrollTicking) return;
@@ -1281,7 +1294,11 @@ window.addEventListener('scroll', () => {
     // hysteresis + min page length avoid flicker when the header shrinks
     const scrollable = document.documentElement.scrollHeight - window.innerHeight > 300;
     if (y > 80 && scrollable) head.classList.add('compact');
-    else if (y < 10) head.classList.remove('compact', 'expanded');
+    else if (y < 10) {
+      head.classList.remove('compact');
+      // on phones the funnel controls the panel, so keep it as the user left it
+      if (!isMobile.matches) head.classList.remove('expanded');
+    }
     scrollTicking = false;
   });
 }, { passive: true });

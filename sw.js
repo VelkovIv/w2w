@@ -1,4 +1,4 @@
-const CACHE = 'w2w-v2.3.0';
+const CACHE = 'w2w-v2.4.0';
 const ASSETS = ['./', './index.html', './styles.css', './app.js', './cloud.js', './firebase-config.js', './logo.svg', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
