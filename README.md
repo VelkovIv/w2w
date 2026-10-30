@@ -1,0 +1,119 @@
+<p align="center">
+  <img src="logo.svg" width="96" alt="W2W logo">
+</p>
+
+<h1 align="center">W2W — What to Watch</h1>
+
+<p align="center">
+  Семейно приложение за филми и сериали: какво да гледаме, какво сме гледали, как ни е харесало и какво да пуснем следващо.
+  <br><br>
+  <a href="https://velkoviv.github.io/w2w/"><b>Отвори приложението →</b></a>
+</p>
+
+<p align="center">
+  <img alt="PWA" src="https://img.shields.io/badge/PWA-installable-7c5cff">
+  <img alt="Firebase" src="https://img.shields.io/badge/Firebase-Auth%20%2B%20Firestore-ff9100">
+  <img alt="IMDb data" src="https://img.shields.io/badge/data-IMDb%20via%20OMDb-f5c518">
+  <img alt="TMDB" src="https://img.shields.io/badge/discover-TMDB-01b4e4">
+  <img alt="No build" src="https://img.shields.io/badge/build-none-22c55e">
+</p>
+
+---
+
+## Възможности
+
+### Списъци
+- **За гледане** — заглавия, които предстои да гледаме. Започнатите са отбелязани с **▶ Гледам** и стоят най-отгоре, докато не ги завършим.
+- **Гледани** — завършените заглавия. Може да се местят ръчно и в двете посоки.
+- **Брояч на сезони** при сериалите (`Сезон 2 / 4`).
+- **Нов сезон** — веднъж на ден се проверява дали гледан сериал има нов сезон; ако има, се връща автоматично в „За гледане“.
+
+### Оценки и бележки
+- Оценка от **½★ до ★★★★★** (с половинки). ★★★ и повече се счита за „харесано“.
+- **Коментар** към всяко заглавие.
+- **Кой е гледал** — Мариана, Ивайло, Семейно.
+
+### Търсене и откриване
+- Добавяне по заглавие или IMDb линк — данните и рейтингът идват от **IMDb**.
+- **Открий** — автоматично сваляне на заглавия по критерии:
+  ключова дума / поредица (напр. *Star Wars*), жанр, актьор, режисьор, **студио или платформа** (Apple TV+, Disney+, Netflix, HBO…), минимален IMDb рейтинг, години, език.
+- Заглавия, които вече са в списъците, се показват с етикет на категорията.
+- Филтри и сортиране по актьор, режисьор, жанр, рейтинг, тип, оценка, зрител.
+
+### Препоръки
+- **Защото харесахте…** — подобни заглавия на оценените с ★★★+, подредени по вкуса ни.
+- **Гледайте следващо** — подреждане на списъка за гледане според харесаните жанрове, режисьори и актьори.
+- Филтър по зрител и разделяне на **Филми** и **Сериали**.
+
+### Навсякъде
+- Работи на компютър и телефон; инсталира се като приложение (PWA).
+- **Вход с Google** и синхронизация в реално време между устройствата.
+
+---
+
+## Как работи
+
+```mermaid
+flowchart LR
+  U[Браузър / телефон] -->|Вход с Google| A[Firebase Auth]
+  U <-->|списъци, оценки, ключове| F[(Cloud Firestore)]
+  U -->|данни и рейтинг| O[OMDb → IMDb]
+  U -->|търсене по критерии, препоръки| T[TMDB]
+  G[GitHub Pages] -->|статични файлове| U
+```
+
+Няма сървър и няма build стъпка — чист HTML, CSS и JavaScript, хостнати в GitHub Pages.
+
+| Файл | Роля |
+|---|---|
+| `index.html` | Структура на интерфейса |
+| `styles.css` | Тъмна тема, адаптивен дизайн, компактен хедър при скрол |
+| `app.js` | Цялата логика: списъци, оценки, търсене, препоръки |
+| `cloud.js` | Вход с Google и синхронизация с Firestore |
+| `firebase-config.js` | Публична конфигурация на Firebase проекта и разрешени акаунти |
+| `firestore.rules` | Правила за достъп до базата |
+| `sw.js`, `manifest.webmanifest`, `icon-*.png` | Инсталиране като приложение и офлайн кеш |
+
+---
+
+## Сигурност
+
+- Достъпът до данните се контролира от [`firestore.rules`](firestore.rules): само изброените Google акаунти с потвърден имейл могат да четат и пишат.
+- `apiKey` във `firebase-config.js` е **публичен по замисъл** — той само идентифицира проекта. Ключът е ограничен до домейна на сайта в Google Cloud Console.
+- Ключовете за OMDb и TMDB **не са в кода** — пазят се в Firestore зад правилата за достъп.
+- Локални файлове с тайни (`*.txt`) са изключени чрез `.gitignore`.
+
+---
+
+## Настройка от нулата
+
+1. **API ключове** (безплатни)
+   - OMDb: <https://www.omdbapi.com/apikey.aspx>
+   - TMDB: <https://www.themoviedb.org/settings/api>
+2. **Firebase** — <https://console.firebase.google.com>
+   - Authentication → Sign-in method → **Google** → Enable
+   - Firestore Database → Create (production mode) → Rules → поставете [`firestore.rules`](firestore.rules) с вашите имейли → Publish
+   - Project settings → Your apps → Web → копирайте `firebaseConfig` във [`firebase-config.js`](firebase-config.js) и попълнете `ALLOWED_EMAILS`
+   - Authentication → Settings → Authorized domains → добавете `<потребител>.github.io`
+3. **GitHub Pages** — Settings → Pages → Deploy from branch → `main` / `root`.
+4. Отворете сайта, влезте с Google и въведете OMDb и TMDB ключовете в **Настройки** (веднъж — синхронизират се към всички устройства).
+
+### Локално
+Отворете `index.html` директно в браузъра — приложението работи без облак, само на това устройство. Входът с Google изисква сайтът да е отворен през `http(s)`.
+
+---
+
+## Инсталиране на телефон
+
+| iPhone (Safari) | Android (Chrome) |
+|---|---|
+| Сподели → **Добави към началния екран** | ⋮ → **Инсталирай приложението** |
+
+---
+
+<p align="center">
+  Данни: <a href="https://www.imdb.com">IMDb</a> чрез <a href="https://www.omdbapi.com">OMDb API</a> ·
+  <a href="https://www.themoviedb.org">TMDB</a>
+  <br>
+  <sub>This product uses the TMDB API but is not endorsed or certified by TMDB.</sub>
+</p>
