@@ -52,11 +52,16 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.25rem; padding: 0 8px; letter-spacing: -.02em; }
 .logo { width: 42px; height: 42px; }
 .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
-.brand-text b {
-  font-size: 1.45rem; font-weight: 800; letter-spacing: -.02em;
-  background: linear-gradient(135deg, #fff 30%, #c4b5fd); -webkit-background-clip: text; background-clip: text; color: transparent;
+.brand-text b { font-size: 1.5rem; font-weight: 900; letter-spacing: .01em; color: #fff; }
+/* same gradient as the play button in the logo */
+.brand-text b .two {
+  background: linear-gradient(120deg, #e823f5 0%, #8a1cf9 50%, #fe8c69 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
 }
-.brand-text small { font-size: .68rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .14em; }
+.brand-text small { font-size: .72rem; font-weight: 600; color: #b8bfd0; letter-spacing: .16em; }
+
+.flag-wrap { display: grid; place-items: center; width: 18px; flex-shrink: 0; font-style: normal; }
+.flag { width: 22px; height: 15px; stroke: none; border-radius: 3px; box-shadow: 0 0 0 1px rgba(255, 255, 255, .15); }
 
 .nav { display: flex; flex-direction: column; gap: 4px; }
 .nav-btn {
@@ -170,6 +175,10 @@ select option { background: var(--bg2); }
 
 .filter-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .filter-row > input, .filter-row > select { flex: 1 1 150px; min-width: 0; }
+/* list filters: selects keep the width of their label, text fields share the spare room */
+#filters .filter-row > input { flex: 1 1 auto; width: auto; }
+#filters .filter-row > select { flex: 0 1 auto; width: auto; }
+#filters .filter-row > .btn { flex: 0 0 auto; margin-left: auto; }
 .range { display: flex; flex-direction: column; gap: 4px; font-size: .78rem; color: var(--muted); flex: 1 1 150px; }
 .range b { color: var(--warn); }
 input[type=range] { padding: 0; accent-color: var(--accent); background: transparent; border: 0; box-shadow: none; }
@@ -445,6 +454,8 @@ button.chip:hover { border-color: var(--accent); color: var(--text); }
   .nav { flex-direction: row; justify-content: space-around; }
   .nav-btn { flex-direction: column; gap: 4px; font-size: .7rem; padding: 8px 4px; flex: 1; align-items: center; }
   .count { display: none; }
+  .lang-btn #lang-name { display: none; }
+  .lang-btn { flex: 0 0 auto; justify-content: center; }
   .main { padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
   .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
   .card-body { padding: 10px; gap: 7px; }

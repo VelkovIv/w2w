@@ -10,12 +10,12 @@ const $ = s => document.querySelector(s);
 const app = () => window.W2W;
 
 const AUTH_ERRORS = {
-  'auth/unauthorized-domain': 'Този адрес не е разрешен във Firebase (Authentication → Settings → Authorized domains).',
-  'auth/network-request-failed': 'Няма интернет връзка.',
-  'auth/too-many-requests': 'Твърде много опити — опитайте по-късно.',
+  'auth/unauthorized-domain': 'auth.err.domain',
+  'auth/network-request-failed': 'auth.err.network',
+  'auth/too-many-requests': 'auth.err.tooMany',
   'auth/popup-closed-by-user': '',
   'auth/cancelled-popup-request': '',
-  'permission-denied': 'Нямате достъп.'
+  'permission-denied': 'auth.err.denied'
 };
 
 function gate(mode, email = '') {
@@ -26,8 +26,8 @@ function gate(mode, email = '') {
 }
 
 function showError(err) {
-  const msg = AUTH_ERRORS[err?.code];
-  $('#auth-error').textContent = msg ?? (err?.message || 'Грешка при вход');
+  const key = AUTH_ERRORS[err?.code];
+  $('#auth-error').textContent = key !== undefined ? (key && app().t(key)) : (err?.message || app().t('auth.err.generic'));
 }
 
 // Stable key order so local and Firestore copies compare equal
@@ -105,7 +105,7 @@ async function initCloud() {
 
   function scheduleSync() {
     clearTimeout(timer);
-    timer = setTimeout(() => pushChanges().catch(err => app().toast('Грешка при синхронизация: ' + err.message, 'error')), 400);
+    timer = setTimeout(() => pushChanges().catch(err => app().toast(app().t('cloud.syncError', { msg: err.message }), 'error')), 400);
   }
 
   function onRemote(snap, first) {
@@ -153,7 +153,7 @@ async function initCloud() {
         if (first) { first = false; resolve(); }
       }, err => {
         if (first) reject(err);
-        else app().toast('Синхронизацията спря: ' + err.message, 'error');
+        else app().toast(app().t('cloud.syncStopped', { msg: err.message }), 'error');
       });
     });
   }
@@ -185,6 +185,6 @@ if (enabled) {
     console.error(err);
     gate('off');
     app().start();
-    app().toast('Облакът е недостъпен — работите локално', 'warn');
+    app().toast(app().t('cloud.offline'), 'warn');
   }
 }

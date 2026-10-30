@@ -20,35 +20,39 @@
   <aside class="sidebar">
     <div class="brand">
       <img class="logo" src="logo-mark.png" alt="W2W">
-      <span class="brand-text"><b>W2W</b><small>What2Watch</small></span>
-      <button class="pin-btn" data-action="toggle-sidebar" title="Закачи менюто да остава отворено" aria-label="Закачи менюто">
+      <span class="brand-text"><b>W<span class="two">2</span>W</b><small>What2Watch</small></span>
+      <button class="pin-btn" data-action="toggle-sidebar" data-i18n-title="brand.pin" title="Закачи менюто да остава отворено" aria-label="Закачи менюто">
         <svg viewBox="0 0 24 24"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>
       </button>
     </div>
     <nav class="nav">
       <button class="nav-btn active" data-view="towatch">
         <svg viewBox="0 0 24 24"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
-        <span>За гледане</span><span class="count" id="count-towatch">0</span>
+        <span data-i18n="nav.towatch">За гледане</span><span class="count" id="count-towatch">0</span>
       </button>
       <button class="nav-btn" data-view="watched">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
-        <span>Гледани</span><span class="count" id="count-watched">0</span>
+        <span data-i18n="nav.watched">Гледани</span><span class="count" id="count-watched">0</span>
       </button>
       <button class="nav-btn" data-view="discover">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z"/></svg>
-        <span>Открий</span>
+        <span data-i18n="nav.discover">Открий</span>
       </button>
       <button class="nav-btn" data-view="recommend">
         <svg viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
-        <span>Препоръки</span>
+        <span data-i18n="nav.recommend">Препоръки</span>
       </button>
       <button class="nav-btn" data-action="open-settings">
         <svg viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
-        <span>Настройки</span>
+        <span data-i18n="nav.settings">Настройки</span>
+      </button>
+      <button class="nav-btn lang-btn" data-action="toggle-lang" id="lang-btn">
+        <i class="flag-wrap" id="lang-flag"></i>
+        <span id="lang-name"></span>
       </button>
     </nav>
     <div class="side-stats" id="stats"></div>
-    <div class="version">W2W · v2.7.0</div>
+    <div class="version">W2W · v2.9.0</div>
   </aside>
 
   <main class="main">
@@ -62,11 +66,11 @@
         </div>
       </div>
       <div class="topbar-actions">
-        <button class="btn ghost sm compact-toggle" data-action="toggle-filters" title="Филтри">
-          <svg viewBox="0 0 24 24"><path d="M3 4h18l-7 8.5V19l-4 2v-8.5z"/></svg> <span class="btn-label">Филтри</span>
+        <button class="btn ghost sm compact-toggle" data-action="toggle-filters" data-i18n-title="filters" title="Филтри">
+          <svg viewBox="0 0 24 24"><path d="M3 4h18l-7 8.5V19l-4 2v-8.5z"/></svg> <span class="btn-label" data-i18n="filters">Филтри</span>
         </button>
-        <button class="btn primary" data-action="open-add" title="Добави заглавие">
-          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> <span class="btn-label">Добави заглавие</span>
+        <button class="btn primary" data-action="open-add" data-i18n-title="addTitle" title="Добави заглавие">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> <span class="btn-label" data-i18n="addTitle">Добави заглавие</span>
         </button>
       </div>
     </header>
@@ -74,48 +78,50 @@
     <section class="filters" id="filters">
       <div class="search-wrap">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-        <input id="f-q" type="search" placeholder="Търси по заглавие, актьор, режисьор, жанр...">
+        <input id="f-q" type="search" data-i18n-ph="f.search" placeholder="Търси по заглавие, актьор, режисьор, жанр...">
       </div>
       <div class="filter-row collapsible">
-        <input id="f-actor" list="dl-actors" placeholder="Актьор">
-        <input id="f-director" list="dl-directors" placeholder="Режисьор">
-        <select id="f-genre"><option value="">Всички жанрове</option></select>
+        <input id="f-actor" list="dl-actors" data-i18n-ph="f.actor" placeholder="Актьор">
+        <input id="f-director" list="dl-directors" data-i18n-ph="f.director" placeholder="Режисьор">
+        <select id="f-genre"><option value="" data-i18n="f.allGenres">Всички жанрове</option></select>
         <select id="f-type">
-          <option value="">Филми и сериали</option>
-          <option value="movie">Само филми</option>
-          <option value="series">Само сериали</option>
+          <option value="" data-i18n="type.both">Филми и сериали</option>
+          <option value="movie" data-i18n="type.movies">Само филми</option>
+          <option value="series" data-i18n="type.series">Само сериали</option>
         </select>
         <select id="f-progress">
-          <option value="">Започнати и незапочнати</option>
-          <option value="watching">Гледам в момента</option>
-          <option value="notstarted">Незапочнати</option>
-          <option value="new">С нов сезон</option>
+          <option value="" data-i18n="progress.all">Започнати и незапочнати</option>
+          <option value="watching" data-i18n="progress.watching">Гледам в момента</option>
+          <option value="notstarted" data-i18n="progress.notstarted">Незапочнати</option>
+          <option value="new" data-i18n="progress.new">С нов сезон</option>
         </select>
         <select id="f-opinion">
-          <option value="">Всички оценки</option>
-          <option value="like">Харесани (★★★ и повече)</option>
-          <option value="dislike">Нехаресани (★ – ★★)</option>
-          <option value="none">Без оценка</option>
+          <option value="" data-i18n="opinion.all">Всички оценки</option>
+          <option value="like" data-i18n="opinion.like">Харесани (★★★ и повече)</option>
+          <option value="dislike" data-i18n="opinion.dislike">Нехаресани (★ – ★★)</option>
+          <option value="none" data-i18n="opinion.none">Без оценка</option>
         </select>
         <select id="f-viewer">
-          <option value="">Всички зрители</option>
+          <option value="" data-i18n="viewer.all">Всички зрители</option>
           <option value="Мариана">Мариана</option>
           <option value="Ивайло">Ивайло</option>
           <option value="Семейно">Семейно</option>
-          <option value="none">Без отбелязано</option>
+          <option value="none" data-i18n="viewer.none">Без отбелязано</option>
         </select>
-        <label class="range">
+        <select id="f-sort">
+          <option value="added" data-i18n="sort.added">Последно добавени</option>
+          <option value="rating" data-i18n="sort.rating">Най-висок рейтинг</option>
+          <option value="stars" data-i18n="sort.stars">Моята оценка</option>
+          <option value="year" data-i18n="sort.year">Най-нови</option>
+          <option value="title" data-i18n="sort.title">По заглавие</option>
+        </select>
+        <button class="btn ghost sm" data-action="reset-filters" data-i18n="clear">Изчисти</button>
+      </div>
+      <div class="filter-row collapsible">
+        <label class="range solo">
           <span>IMDb ≥ <b id="f-rating-val">0</b></span>
           <input id="f-rating" type="range" min="0" max="9.5" step="0.5" value="0">
         </label>
-        <select id="f-sort">
-          <option value="added">Последно добавени</option>
-          <option value="rating">Най-висок рейтинг</option>
-          <option value="stars">Моята оценка</option>
-          <option value="year">Най-нови</option>
-          <option value="title">По заглавие</option>
-        </select>
-        <button class="btn ghost sm" data-action="reset-filters">Изчисти</button>
       </div>
       <datalist id="dl-actors"></datalist>
       <datalist id="dl-directors"></datalist>
@@ -125,17 +131,17 @@
     <section class="filters" id="discover-panel" hidden>
       <div class="search-wrap">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-        <input id="d-keyword" type="search" placeholder="Ключова дума или поредица — напр. Star Wars, Marvel, Harry Potter, Batman">
+        <input id="d-keyword" type="search" data-i18n-ph="d.keyword" placeholder="Ключова дума или поредица — напр. Star Wars, Marvel, Harry Potter, Batman">
       </div>
       <div class="filter-row collapsible">
         <select id="d-type">
-          <option value="both">Филми и сериали</option>
-          <option value="movie">Само филми</option>
-          <option value="tv">Само сериали</option>
+          <option value="both" data-i18n="type.both">Филми и сериали</option>
+          <option value="movie" data-i18n="type.movies">Само филми</option>
+          <option value="tv" data-i18n="type.series">Само сериали</option>
         </select>
-        <input id="d-actor" placeholder="Актьор (напр. Tom Hanks)">
-        <input id="d-director" placeholder="Режисьор / създател">
-        <input id="d-studio" list="dl-studios" placeholder="Студио / платформа (Apple TV+, Disney+...)">
+        <input id="d-actor" data-i18n-ph="d.actor" placeholder="Актьор (напр. Tom Hanks)">
+        <input id="d-director" data-i18n-ph="d.director" placeholder="Режисьор / създател">
+        <input id="d-studio" list="dl-studios" data-i18n-ph="d.studio" placeholder="Студио / платформа (Apple TV+, Disney+...)">
         <datalist id="dl-studios"></datalist>
       </div>
       <div class="filter-row collapsible">
@@ -145,35 +151,35 @@
         </label>
       </div>
       <div class="filter-row collapsible">
-        <input id="d-year-from" type="number" min="1900" max="2100" placeholder="От година">
-        <input id="d-year-to" type="number" min="1900" max="2100" placeholder="До година">
+        <input id="d-year-from" type="number" min="1900" max="2100" data-i18n-ph="d.yearFrom" placeholder="От година">
+        <input id="d-year-to" type="number" min="1900" max="2100" data-i18n-ph="d.yearTo" placeholder="До година">
         <select id="d-lang">
-          <option value="">Всеки език</option>
-          <option value="en">Английски</option>
-          <option value="bg">Български</option>
-          <option value="fr">Френски</option>
-          <option value="de">Немски</option>
-          <option value="es">Испански</option>
-          <option value="it">Италиански</option>
-          <option value="ko">Корейски</option>
-          <option value="ja">Японски</option>
-          <option value="tr">Турски</option>
-          <option value="da">Датски</option>
-          <option value="sv">Шведски</option>
-          <option value="hi">Хинди</option>
+          <option value="" data-i18n="lang.any">Всеки език</option>
+          <option value="en" data-i18n="lang.en">Английски</option>
+          <option value="bg" data-i18n="lang.bg">Български</option>
+          <option value="fr" data-i18n="lang.fr">Френски</option>
+          <option value="de" data-i18n="lang.de">Немски</option>
+          <option value="es" data-i18n="lang.es">Испански</option>
+          <option value="it" data-i18n="lang.it">Италиански</option>
+          <option value="ko" data-i18n="lang.ko">Корейски</option>
+          <option value="ja" data-i18n="lang.ja">Японски</option>
+          <option value="tr" data-i18n="lang.tr">Турски</option>
+          <option value="da" data-i18n="lang.da">Датски</option>
+          <option value="sv" data-i18n="lang.sv">Шведски</option>
+          <option value="hi" data-i18n="lang.hi">Хинди</option>
         </select>
         <select id="d-sort">
-          <option value="popularity">Най-популярни</option>
-          <option value="rating">Най-високо оценени</option>
-          <option value="newest">Най-нови</option>
+          <option value="popularity" data-i18n="d.sort.popularity">Най-популярни</option>
+          <option value="rating" data-i18n="d.sort.rating">Най-високо оценени</option>
+          <option value="newest" data-i18n="d.sort.newest">Най-нови</option>
         </select>
       </div>
       <div class="chips collapsible" id="d-genres"></div>
       <div class="filter-row">
         <button class="btn primary" id="d-search" data-action="discover-search">
-          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg> Търси
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg> <span data-i18n="search">Търси</span>
         </button>
-        <button class="btn ghost" data-action="discover-reset">Изчисти</button>
+        <button class="btn ghost" data-action="discover-reset" data-i18n="clear">Изчисти</button>
         <span class="muted small" id="d-status"></span>
       </div>
     </section>
@@ -185,27 +191,27 @@
   <!-- Добавяне -->
   <div class="modal" id="modal-add" hidden>
     <div class="modal-card wide">
-      <button class="modal-close" data-action="close-modal" aria-label="Затвори">&times;</button>
-      <h2>Добави филм или сериал</h2>
+      <button class="modal-close" data-action="close-modal" data-i18n-title="close" aria-label="Затвори">&times;</button>
+      <h2 data-i18n="add.h">Добави филм или сериал</h2>
       <div class="add-bar">
         <div class="search-wrap grow">
           <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-          <input id="add-input" type="search" placeholder="Заглавие на английски или IMDb линк / ID (tt0111161)" autocomplete="off">
+          <input id="add-input" type="search" data-i18n-ph="add.ph" placeholder="Заглавие на английски или IMDb линк / ID (tt0111161)" autocomplete="off">
         </div>
         <select id="add-type">
-          <option value="">Всички</option>
-          <option value="movie">Филми</option>
-          <option value="series">Сериали</option>
+          <option value="" data-i18n="add.all">Всички</option>
+          <option value="movie" data-i18n="add.movies">Филми</option>
+          <option value="series" data-i18n="add.series">Сериали</option>
         </select>
       </div>
-      <div id="add-results" class="results"><p class="hint">Започнете да пишете, за да търсите в IMDb.</p></div>
+      <div id="add-results" class="results"><p class="hint" data-i18n="add.hint">Започнете да пишете, за да търсите в IMDb.</p></div>
     </div>
   </div>
 
   <!-- Детайли -->
   <div class="modal" id="modal-detail" hidden>
     <div class="modal-card wide">
-      <button class="modal-close" data-action="close-modal" aria-label="Затвори">&times;</button>
+      <button class="modal-close" data-action="close-modal" data-i18n-title="close" aria-label="Затвори">&times;</button>
       <div id="detail-body"></div>
     </div>
   </div>
@@ -213,34 +219,34 @@
   <!-- Настройки -->
   <div class="modal" id="modal-settings" hidden>
     <div class="modal-card">
-      <button class="modal-close" data-action="close-modal" aria-label="Затвори">&times;</button>
-      <h2>Настройки</h2>
+      <button class="modal-close" data-action="close-modal" data-i18n-title="close" aria-label="Затвори">&times;</button>
+      <h2 data-i18n="settings.h">Настройки</h2>
       <div class="account" id="account-box" hidden>
-        <span>Влезли сте като <b id="account-email"></b><br><small class="muted">Списъците и ключовете се синхронизират между устройствата</small></span>
-        <button class="btn ghost sm" id="account-signout">Изход</button>
+        <span><span data-i18n="account.signedIn">Влезли сте като</span> <b id="account-email"></b><br><small class="muted" data-i18n="account.sync">Списъците и ключовете се синхронизират между устройствата</small></span>
+        <button class="btn ghost sm" id="account-signout" data-i18n="signout">Изход</button>
       </div>
       <label class="field">
-        <span>OMDb API ключ (данни и рейтинги от IMDb)</span>
+        <span data-i18n="omdb.label">OMDb API ключ (данни и рейтинги от IMDb)</span>
         <div class="add-bar">
-          <input id="api-key" type="password" placeholder="напр. a1b2c3d4" class="grow">
-          <button class="btn primary" data-action="save-key">Запази</button>
+          <input id="api-key" type="password" data-i18n-ph="omdb.ph" placeholder="напр. a1b2c3d4" class="grow">
+          <button class="btn primary" data-action="save-key" data-i18n="save">Запази</button>
         </div>
-        <small class="muted">Безплатен ключ: <a href="https://www.omdbapi.com/apikey.aspx" target="_blank" rel="noopener noreferrer">omdbapi.com/apikey.aspx</a> (избери FREE, потвърди от имейла).</small>
+        <small class="muted" data-i18n-html="omdb.help">Безплатен ключ: <a href="https://www.omdbapi.com/apikey.aspx" target="_blank" rel="noopener noreferrer">omdbapi.com/apikey.aspx</a> (избери FREE, потвърди от имейла).</small>
       </label>
       <label class="field">
-        <span>TMDB API ключ (автоматично търсене по критерии)</span>
+        <span data-i18n="tmdb.label">TMDB API ключ (автоматично търсене по критерии)</span>
         <div class="add-bar">
-          <input id="tmdb-key" type="password" placeholder="API Key (v3) или Read Access Token" class="grow">
-          <button class="btn primary" data-action="save-tmdb">Запази</button>
+          <input id="tmdb-key" type="password" data-i18n-ph="tmdb.ph" placeholder="API Key (v3) или Read Access Token" class="grow">
+          <button class="btn primary" data-action="save-tmdb" data-i18n="save">Запази</button>
         </div>
-        <small class="muted">Безплатен ключ: регистрация в <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer">themoviedb.org/settings/api</a>.</small>
+        <small class="muted" data-i18n-html="tmdb.help">Безплатен ключ: регистрация в <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer">themoviedb.org/settings/api</a>.</small>
       </label>
       <div class="settings-grid">
-        <button class="btn ghost" data-action="refresh-ratings">Обнови рейтингите</button>
-        <button class="btn ghost" data-action="check-seasons">Провери за нови сезони</button>
-        <button class="btn ghost" data-action="export">Експорт (JSON)</button>
-        <button class="btn ghost" data-action="import">Импорт (JSON)</button>
-        <button class="btn danger-ghost" data-action="clear-all">Изтрий всичко</button>
+        <button class="btn ghost" data-action="refresh-ratings" data-i18n="settings.refresh">Обнови рейтингите</button>
+        <button class="btn ghost" data-action="check-seasons" data-i18n="settings.seasons">Провери за нови сезони</button>
+        <button class="btn ghost" data-action="export" data-i18n="settings.export">Експорт (JSON)</button>
+        <button class="btn ghost" data-action="import" data-i18n="settings.import">Импорт (JSON)</button>
+        <button class="btn danger-ghost" data-action="clear-all" data-i18n="settings.clear">Изтрий всичко</button>
       </div>
       <input type="file" id="import-file" accept="application/json" hidden>
     </div>
@@ -254,18 +260,19 @@
       <div id="auth-loading"><div class="loader"></div></div>
       <div id="auth-login" hidden>
         <button class="btn primary wide" id="auth-google">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> Вход с Google
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> <span data-i18n="auth.google">Вход с Google</span>
         </button>
-        <p class="muted small">Достъпът е само за разрешени акаунти.</p>
+        <p class="muted small" data-i18n="auth.note">Достъпът е само за разрешени акаунти.</p>
       </div>
       <div id="auth-denied" hidden>
-        <p>Акаунтът <b id="auth-denied-email"></b> няма достъп.</p>
-        <button class="btn ghost wide" id="auth-signout">Изход и вход с друг акаунт</button>
+        <p><span data-i18n="auth.deniedPre">Акаунтът</span> <b id="auth-denied-email"></b> <span data-i18n="auth.deniedPost">няма достъп.</span></p>
+        <button class="btn ghost wide" id="auth-signout" data-i18n="auth.switch">Изход и вход с друг акаунт</button>
       </div>
       <p class="hint error" id="auth-error"></p>
     </div>
   </div>
 
+  <script src="i18n.js"></script>
   <script src="app.js"></script>
   <script type="module" src="cloud.js"></script>
 </body>

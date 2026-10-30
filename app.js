@@ -11,16 +11,6 @@ const LS_SIDEBAR = 'cinelist.sidebarPinned';
 
 const VIEWERS = ['Мариана', 'Ивайло', 'Семейно'];
 
-const GENRE_BG = {
-  Action: 'Екшън', Adventure: 'Приключенски', Animation: 'Анимация', Biography: 'Биографичен',
-  Comedy: 'Комедия', Crime: 'Криминален', Documentary: 'Документален', Drama: 'Драма',
-  Family: 'Семеен', Fantasy: 'Фентъзи', 'Film-Noir': 'Ноар', History: 'Исторически',
-  Horror: 'Ужаси', Music: 'Музикален', Musical: 'Мюзикъл', Mystery: 'Мистерия',
-  Romance: 'Романтичен', 'Sci-Fi': 'Фантастика', Sport: 'Спорт', Thriller: 'Трилър',
-  War: 'Военен', Western: 'Уестърн', 'Reality-TV': 'Риалити', 'Talk-Show': 'Ток шоу',
-  'Game-Show': 'Игрално шоу', News: 'Новини', Short: 'Късометражен'
-};
-
 // IMDb genre name -> TMDB genre ids (movie, tv); null = no TV equivalent
 const GENRES = [
   ['Action', 28, 10759], ['Adventure', 12, 10759], ['Animation', 16, 16], ['Comedy', 35, 35],
@@ -80,20 +70,26 @@ const ICON = {
   pause: svg('<path d="M8 5v14M16 5v14"/>')
 };
 
+const FLAGS = {
+  bg: '<svg class="flag" viewBox="0 0 5 3" preserveAspectRatio="none"><rect width="5" height="1" fill="#fff"/><rect y="1" width="5" height="1" fill="#00966E"/><rect y="2" width="5" height="1" fill="#D62612"/></svg>',
+  en: '<svg class="flag" viewBox="0 0 60 30" preserveAspectRatio="xMidYMid slice"><clipPath id="uk-s"><path d="M0,0 v30 h60 v-30 z"/></clipPath><clipPath id="uk-t"><path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z"/></clipPath><g clip-path="url(#uk-s)"><path d="M0,0 v30 h60 v-30 z" fill="#012169"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/><path d="M0,0 L60,30 M60,0 L0,30" clip-path="url(#uk-t)" stroke="#C8102E" stroke-width="4"/><path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/><path d="M30,0 v30 M0,15 h60" stroke="#C8102E" stroke-width="6"/></g></svg>'
+};
+
 /* ---------- Helpers ---------- */
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const tg = g => GENRE_BG[g] || g;
 const isId = id => /^tt\d{6,10}$/.test(id);
 const split = s => (!s || s === 'N/A') ? [] :
   [...new Set(s.split(',').map(x => x.replace(/\s*\(.*?\)/g, '').trim()).filter(Boolean))];
 const ratingClass = r => r >= 8 ? 'high' : r >= 6.5 ? 'mid' : 'low';
-const typeLabel = t => t === 'series' ? 'Сериал' : 'Филм';
+const typeLabel = t2 => t2 === 'series' ? t('type.seriesOne') : t('type.movie');
 const yearNum = y => parseInt(y, 10) || 0;
+// errors that make further requests pointless (missing/invalid key, daily limit)
+const fail = (msg, fatal = false) => Object.assign(new Error(msg), { fatal });
 
-const defaultFilters = () => ({ q: '', actor: '', director: '', genre: '', type: '', opinion: '', viewer: '', minRating: 0, sort: 'added' });
+const defaultFilters = () => ({ q: '', actor: '', director: '', genre: '', type: '', progress: '', opinion: '', viewer: '', minRating: 0, sort: 'added' });
 const defaultCriteria = () => ({ type: 'both', keyword: '', studio: '', genres: [], actor: '', director: '', minRating: 7, yearFrom: '', yearTo: '', lang: '', sort: 'popularity' });
 
 function loadCriteria() {
@@ -124,8 +120,8 @@ const starClass = (v, n) => v >= n ? 'full' : v >= n - 0.5 ? 'half' : '';
 const starsHtml = (it, cls = '') => {
   const id = esc(it.imdbID);
   const v = it.stars || 0;
-  return `<div class="stars ${cls}" title="Моята оценка" data-value="${v}">${[1, 2, 3, 4, 5].map(n =>
-    `<span class="star ${starClass(v, n)}">★<button class="hit l" data-action="rate" data-id="${id}" data-value="${n - 0.5}" title="${n - 0.5} от 5"></button><button class="hit r" data-action="rate" data-id="${id}" data-value="${n}" title="${n} от 5"></button></span>`).join('')}${v ? `<span class="stars-val">${v}</span>` : ''}</div>`;
+  return `<div class="stars ${cls}" title="${t('stars.title')}" data-value="${v}">${[1, 2, 3, 4, 5].map(n =>
+    `<span class="star ${starClass(v, n)}">★<button class="hit l" data-action="rate" data-id="${id}" data-value="${n - 0.5}" title="${t('stars.of', { n: n - 0.5 })}"></button><button class="hit r" data-action="rate" data-id="${id}" data-value="${n}" title="${t('stars.of', { n })}"></button></span>`).join('')}${v ? `<span class="stars-val">${v}</span>` : ''}</div>`;
 };
 
 function paintStars(box, v) {
@@ -143,17 +139,17 @@ document.addEventListener('mouseout', e => {
   if (box && !box.contains(e.relatedTarget)) paintStars(box, parseFloat(box.dataset.value) || 0);
 });
 
-const statusInfo = it => it.status === 'watched' ? ['watched', 'В „Гледани“']
-  : it.watching ? ['watching', 'Гледам в момента'] : ['towatch', 'В „За гледане“'];
+const statusInfo = it => it.status === 'watched' ? ['watched', t('status.watched')]
+  : it.watching ? ['watching', t('status.watching')] : ['towatch', t('status.towatch')];
 const statusTag = it => { const [cls, text] = statusInfo(it); return `<span class="tag status ${cls}">${text}</span>`; };
 
 function seasonHtml(it) {
   if (it.type !== 'series' || !it.watching || it.status !== 'towatch') return '';
   const id = esc(it.imdbID);
-  return `<div class="season">Сезон
-    <button class="step" data-action="season" data-id="${id}" data-value="-1" title="Предишен сезон">−</button>
+  return `<div class="season">${t('season')}
+    <button class="step" data-action="season" data-id="${id}" data-value="-1" title="${t('season.prev')}">−</button>
     <b>${it.season || 1}</b>${it.totalSeasons ? `<span class="muted">/ ${it.totalSeasons}</span>` : ''}
-    <button class="step" data-action="season" data-id="${id}" data-value="1" title="Следващ сезон">+</button></div>`;
+    <button class="step" data-action="season" data-id="${id}" data-value="1" title="${t('season.next')}">+</button></div>`;
 }
 const personCache = new Map();
 const keywordCache = new Map();
@@ -177,13 +173,13 @@ async function omdb(params) {
   const key = localStorage.getItem(LS_KEY);
   if (!key) {
     openSettings();
-    throw new Error('Въведете OMDb API ключ в Настройки');
+    throw fail(t('err.noOmdb'), true);
   }
   const res = await fetch('https://www.omdbapi.com/?' + new URLSearchParams({ apikey: key, ...params }));
   const d = await res.json().catch(() => ({ Response: 'False', Error: 'HTTP ' + res.status }));
   if (d.Response === 'False') {
-    const map = { 'Movie not found!': 'Няма намерени резултати', 'Invalid API key!': 'Невалиден API ключ', 'Too many results.': 'Твърде много резултати — уточнете заглавието', 'Request limit reached!': 'Достигнат дневен лимит на API ключа' };
-    throw new Error(map[d.Error] || d.Error || 'Грешка при заявката');
+    const map = { 'Movie not found!': 'err.notFound', 'Invalid API key!': 'err.badKey', 'Too many results.': 'err.tooMany', 'Request limit reached!': 'err.limit' };
+    throw fail(map[d.Error] ? t(map[d.Error]) : (d.Error || t('err.request')), d.Error === 'Invalid API key!' || d.Error === 'Request limit reached!');
   }
   return d;
 }
@@ -209,7 +205,7 @@ function mapDetails(d) {
 }
 
 async function addTitle(id, status = 'towatch') {
-  if (byId(id)) { toast('Вече е в списъка', 'warn'); return; }
+  if (byId(id)) { toast(t('toast.already'), 'warn'); return; }
   const details = state.discover[id] || mapDetails(await omdb({ i: id, plot: 'full' }));
   const item = {
     ...details, status, opinion: null, viewers: [], addedAt: Date.now(),
@@ -219,7 +215,7 @@ async function addTitle(id, status = 'towatch') {
   state.items.unshift(item);
   save();
   render();
-  toast(status === 'watched' ? `„${item.title}“ е в Гледани — оценете го` : `„${item.title}“ е добавен за гледане`);
+  toast(status === 'watched' ? t('toast.addedWatched', { title: item.title }) : t('toast.added', { title: item.title }));
 }
 
 /* ---------- Actions ---------- */
@@ -256,7 +252,7 @@ async function handleAction(action, el) {
       list.forEach((it, idx) => state.items.unshift({ ...it, status: 'towatch', opinion: null, viewers: [], addedAt: now - idx, watchedAt: null }));
       save();
       render();
-      return toast(`Добавени ${list.length} заглавия за гледане`);
+      return toast(t('toast.addedMany', { n: list.length }));
     }
     case 'close-modal': return closeModals();
     case 'reset-filters': state.f = defaultFilters(); syncFilterInputs(); return renderList();
@@ -273,6 +269,7 @@ async function handleAction(action, el) {
       return;
     }
     case 'toggle-filters': return $('.sticky-head').classList.toggle('expanded');
+    case 'toggle-lang': return setLang(LANG === 'bg' ? 'en' : 'bg');
     case 'check-seasons': return checkNewSeasons(true);
     case 'rec-viewer':
       state.recViewer = VIEWERS.includes(el.dataset.value) ? el.dataset.value : '';
@@ -319,11 +316,11 @@ async function handleAction(action, el) {
     }
     case 'watched':
       Object.assign(it, { status: 'watched', watching: false, newSeason: false, watchedAt: Date.now(), seenSeasons: it.totalSeasons || it.season || null });
-      toast(`„${it.title}“ е завършен и преместен в Гледани`);
+      toast(t('toast.finished', { title: it.title }));
       break;
     case 'unwatch':
       Object.assign(it, { status: 'towatch', watchedAt: null, newSeason: false });
-      toast(`„${it.title}“ е преместен в „За гледане“`);
+      toast(t('toast.movedBack', { title: it.title }));
       break;
     case 'rate': {
       const n = parseFloat(el.dataset.value);
@@ -345,7 +342,7 @@ async function handleAction(action, el) {
       break;
     }
     case 'remove':
-      if (!confirm(`Да изтрия ли „${it.title}“?`)) return;
+      if (!confirm(t('confirm.remove', { title: it.title }))) return;
       state.items = state.items.filter(i => i !== it);
       closeModals();
       break;
@@ -447,7 +444,7 @@ function populateFilterOptions() {
     i.director.forEach(d => directors.add(d));
   });
   const sel = $('#f-genre');
-  sel.innerHTML = '<option value="">Всички жанрове</option>' +
+  sel.innerHTML = `<option value="">${t('f.allGenres')}</option>` +
     [...genres].sort((a, b) => tg(a).localeCompare(tg(b))).map(g => `<option value="${esc(g)}">${esc(tg(g))}</option>`).join('');
   sel.value = state.f.genre;
   $('#dl-actors').innerHTML = [...actors].sort().map(a => `<option value="${esc(a)}">`).join('');
@@ -455,17 +452,9 @@ function populateFilterOptions() {
 }
 
 /* ---------- Rendering ---------- */
-const VIEWS = {
-  towatch: ['За гледане', 'Започнатите остават тук, докато не ги завършите'],
-  watched: ['Гледани', 'Завършени заглавия — оценете от ★ до ★★★★★ (★★★ и повече = харесано)'],
-  discover: ['Открий', 'Задайте критерии — заглавията се свалят автоматично с данни и рейтинг от IMDb'],
-  recommend: ['Препоръки', 'Подбрани според вашия вкус и рейтинга в IMDb']
-};
-
 function render() {
-  const [title, sub] = VIEWS[state.view];
-  $('#view-title').textContent = title;
-  $('#view-sub').textContent = sub;
+  $('#view-title').textContent = t('view.' + state.view);
+  $('#view-sub').textContent = t('view.' + state.view + '.sub');
   $$('.nav-btn[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === state.view));
   $('#filters').hidden = state.view === 'recommend' || state.view === 'discover';
   $('#discover-panel').hidden = state.view !== 'discover';
@@ -490,15 +479,15 @@ function renderStats() {
   const pct = liked + disliked ? Math.round(liked / (liked + disliked) * 100) : 0;
   const watching = state.items.filter(i => i.status === 'towatch' && i.watching).length;
   $('#stats').innerHTML = `
-    <fieldset class="stat"><legend>гледам в момента</legend><b>${watching}</b></fieldset>
-    <fieldset class="stat"><legend>заглавия общо</legend><b>${state.items.length}</b></fieldset>
-    <fieldset class="stat"><legend>харесани / нехаресани</legend><b>${liked} / ${disliked}</b>
+    <fieldset class="stat"><legend>${t('stats.watching')}</legend><b>${watching}</b></fieldset>
+    <fieldset class="stat"><legend>${t('stats.total')}</legend><b>${state.items.length}</b></fieldset>
+    <fieldset class="stat"><legend>${t('stats.liked')}</legend><b>${liked} / ${disliked}</b>
       ${liked + disliked ? `<div class="bar"><i style="width:${pct}%"></i></div>` : ''}</fieldset>`;
 }
 
 function emptyState(title, text, withButton = true) {
   return `<div class="empty"><h3>${esc(title)}</h3><p>${esc(text)}</p>
-    ${withButton ? `<button class="btn primary" data-action="open-add">${ICON.plus} Добави заглавие</button>` : ''}</div>`;
+    ${withButton ? `<button class="btn primary" data-action="open-add">${ICON.plus} ${t('addTitle')}</button>` : ''}</div>`;
 }
 
 function renderList() {
@@ -506,19 +495,19 @@ function renderList() {
   const c = $('#content');
   const total = state.items.filter(i => i.status === state.view).length;
   const list = filtered();
-  $('#result-count').textContent = total ? `Показани ${list.length} от ${total}` : '';
+  $('#result-count').textContent = total ? t('shown', { n: list.length, total }) : '';
 
   if (!localStorage.getItem(LS_KEY) && !state.items.length) {
-    c.innerHTML = `<div class="empty"><h3>Добре дошли в W2W — What to Watch</h3>
-      <p>За да вземаме данни и рейтинги от IMDb, въведете безплатен OMDb API ключ.</p>
-      <button class="btn primary" data-action="open-settings">Въведи API ключ</button></div>`;
+    c.innerHTML = `<div class="empty"><h3>${t('welcome.h')}</h3>
+      <p>${t('welcome.p')}</p>
+      <button class="btn primary" data-action="open-settings">${t('welcome.btn')}</button></div>`;
   } else if (!total) {
     c.innerHTML = state.view === 'towatch'
-      ? emptyState('Списъкът е празен', 'Добавете филми и сериали, които искате да гледате.')
-      : emptyState('Още няма гледани заглавия', 'Маркирайте заглавие като гледано или го оценете.', false);
+      ? emptyState(t('empty.towatch.h'), t('empty.towatch.p'))
+      : emptyState(t('empty.watched.h'), t('empty.watched.p'), false);
   } else if (!list.length) {
-    c.innerHTML = `<div class="empty"><h3>Няма резултати</h3><p>Опитайте с други филтри.</p>
-      <button class="btn ghost" data-action="reset-filters">Изчисти филтрите</button></div>`;
+    c.innerHTML = `<div class="empty"><h3>${t('noResults.h')}</h3><p>${t('noResults.p')}</p>
+      <button class="btn ghost" data-action="reset-filters">${t('clearFilters')}</button></div>`;
   } else {
     c.innerHTML = `<div class="grid">${list.map(i => card(i)).join('')}</div>`;
   }
@@ -535,26 +524,26 @@ function card(it, { discover = false, reasons = [] } = {}) {
   if (own) it = own;
   const id = esc(it.imdbID);
   const rating = it.rating != null ? `<span class="badge rating ${ratingClass(it.rating)}">★ ${it.rating.toFixed(1)}</span>` : '';
-  const op = it.stars ? `<span class="badge op stars-badge ${it.opinion}" title="Моята оценка">${it.stars}★</span>`
+  const op = it.stars ? `<span class="badge op stars-badge ${it.opinion}" title="${t('stars.title')}">${it.stars}★</span>`
     : it.opinion ? `<span class="badge op ${it.opinion}">${ICON[it.opinion]}</span>` : '';
-  const people = it.director.length ? `Реж.: ${it.director.join(', ')}` : it.actors.slice(0, 2).join(', ');
+  const people = it.director.length ? `${t('dir.short')} ${it.director.join(', ')}` : it.actors.slice(0, 2).join(', ');
   const progress = own ? `<span class="badge progress ${statusInfo(own)[0]}">${statusInfo(own)[1]}</span>`
     : discover || it.status !== 'towatch' ? ''
-    : it.watching ? `<span class="badge progress">▶ Гледам</span>`
-    : it.newSeason ? `<span class="badge progress new">Нов сезон</span>` : '';
+    : it.watching ? `<span class="badge progress">${t('badge.watching')}</span>`
+    : it.newSeason ? `<span class="badge progress new">${t('badge.new')}</span>` : '';
 
   const actions = own ? statusTag(own)
     : discover
-    ? `<button class="btn sm primary" data-action="add" data-id="${id}">${ICON.plus} За гледане</button>
-       <button class="btn sm ghost" data-action="add-watched" data-id="${id}">Гледах го</button>`
+    ? `<button class="btn sm primary" data-action="add" data-id="${id}">${ICON.plus} ${t('btn.toWatch')}</button>
+       <button class="btn sm ghost" data-action="add-watched" data-id="${id}">${t('btn.watchedIt')}</button>`
     : `${it.status === 'towatch'
-         ? `<button class="icon-btn play ${it.watching ? 'on' : ''}" data-action="start" data-id="${id}" title="${it.watching ? 'Пауза — не гледам в момента' : 'Започнах да гледам'}">${it.watching ? ICON.pause : ICON.play}</button>
-            <button class="icon-btn" data-action="watched" data-id="${id}" title="Завърших — премести в Гледани">${ICON.check}</button>`
-         : `<button class="icon-btn" data-action="unwatch" data-id="${id}" title="Премести в „За гледане“">${ICON.undo}</button>`}
-       <button class="icon-btn danger" data-action="remove" data-id="${id}" title="Изтрий">${ICON.trash}</button>`;
+         ? `<button class="icon-btn play ${it.watching ? 'on' : ''}" data-action="start" data-id="${id}" title="${it.watching ? t('btn.pauseTitle') : t('btn.startTitle')}">${it.watching ? ICON.pause : ICON.play}</button>
+            <button class="icon-btn" data-action="watched" data-id="${id}" title="${t('btn.finishTitle')}">${ICON.check}</button>`
+         : `<button class="icon-btn" data-action="unwatch" data-id="${id}" title="${t('btn.moveBack')}">${ICON.undo}</button>`}
+       <button class="icon-btn danger" data-action="remove" data-id="${id}" title="${t('btn.delete')}">${ICON.trash}</button>`;
 
-  const viewers = discover ? '' : `<div class="viewers"><span>Гледали:</span>${VIEWERS.map((v, n) =>
-    `<button class="viewer v${n} ${viewersOf(it).includes(v) ? 'on' : ''}" data-action="toggle-viewer" data-id="${id}" data-value="${esc(v)}" title="${esc(v)}">${esc(v.charAt(0))}</button>`).join('')}</div>`;
+  const viewers = discover ? '' : `<div class="viewers"><span>${t('viewers.label')}</span>${VIEWERS.map((v, n) =>
+    `<button class="viewer v${n} ${viewersOf(it).includes(v) ? 'on' : ''}" data-action="toggle-viewer" data-id="${id}" data-value="${esc(v)}" title="${esc(vl(v))}">${esc(vl(v).charAt(0))}</button>`).join('')}</div>`;
   return `<article class="card${own ? ' owned' : ''}" data-action="open" data-id="${id}">
     <div class="poster">${posterHtml(it)}${rating}${op}${progress}<span class="badge type">${typeLabel(it.type)}</span></div>
     <div class="card-body">
@@ -582,12 +571,12 @@ function openDetail(id) {
 
   const actions = inList
     ? `${it.status === 'towatch'
-         ? `<button class="btn ghost play ${it.watching ? 'on' : ''}" data-action="start" data-id="${eid}">${it.watching ? ICON.pause + ' Пауза' : ICON.play + ' Започнах'}</button>
-            <button class="btn ghost" data-action="watched" data-id="${eid}">${ICON.check} Завърших</button>`
-         : `<button class="btn ghost" data-action="unwatch" data-id="${eid}">${ICON.undo} Премести в „За гледане“</button>`}
-       <button class="btn danger-ghost" data-action="remove" data-id="${eid}">${ICON.trash}</button>`
-    : `<button class="btn primary" data-action="add" data-id="${eid}">${ICON.plus} За гледане</button>
-       <button class="btn ghost" data-action="add-watched" data-id="${eid}">Гледах го</button>`;
+         ? `<button class="btn ghost play ${it.watching ? 'on' : ''}" data-action="start" data-id="${eid}">${it.watching ? ICON.pause + ' ' + t('detail.pause') : ICON.play + ' ' + t('detail.start')}</button>
+            <button class="btn ghost" data-action="watched" data-id="${eid}">${ICON.check} ${t('detail.finish')}</button>`
+         : `<button class="btn ghost" data-action="unwatch" data-id="${eid}">${ICON.undo} ${t('btn.moveBack')}</button>`}
+       <button class="btn danger-ghost" data-action="remove" data-id="${eid}" title="${t('btn.delete')}">${ICON.trash}</button>`
+    : `<button class="btn primary" data-action="add" data-id="${eid}">${ICON.plus} ${t('btn.toWatch')}</button>
+       <button class="btn ghost" data-action="add-watched" data-id="${eid}">${t('btn.watchedIt')}</button>`;
 
   $('#detail-body').innerHTML = `
     <div class="detail">
@@ -595,20 +584,20 @@ function openDetail(id) {
       <div class="detail-info">
         <div class="detail-type">${typeLabel(it.type)} · ${esc(it.year)}${it.runtime ? ' · ' + esc(it.runtime) : ''}${it.country ? ' · ' + esc(it.country) : ''}</div>
         <h2>${esc(it.title)}</h2>
-        <div class="big-rating"><b>★ ${it.rating != null ? it.rating.toFixed(1) : '—'}</b><span class="muted">/ 10 IMDb${it.votes ? ' · ' + esc(it.votes) + ' гласа' : ''}</span></div>
+        <div class="big-rating"><b>★ ${it.rating != null ? it.rating.toFixed(1) : '—'}</b><span class="muted">/ 10 IMDb${it.votes ? ' · ' + esc(it.votes) + ' ' + t('detail.votes') : ''}</span></div>
         ${chipList(it.genre, 'genre', tg)}
-        <p class="plot">${esc(it.plot || 'Няма описание.')}</p>
+        <p class="plot">${esc(it.plot || t('detail.noPlot'))}</p>
         <dl>
-          <dt>${it.type === 'series' ? 'Създатели' : 'Режисьор'}</dt><dd>${chipList(it.director, 'director')}</dd>
-          <dt>Актьори</dt><dd>${chipList(it.actors, 'actor')}</dd>
-          ${inList ? `<dt>Гледано от</dt><dd><div class="chips">${VIEWERS.map(v =>
-            `<button class="chip toggle ${viewersOf(it).includes(v) ? 'on' : ''}" data-action="toggle-viewer" data-id="${eid}" data-value="${esc(v)}">${esc(v)}</button>`).join('')}</div></dd>` : ''}
+          <dt>${it.type === 'series' ? t('detail.creators') : t('detail.director')}</dt><dd>${chipList(it.director, 'director')}</dd>
+          <dt>${t('detail.actors')}</dt><dd>${chipList(it.actors, 'actor')}</dd>
+          ${inList ? `<dt>${t('detail.watchedBy')}</dt><dd><div class="chips">${VIEWERS.map(v =>
+            `<button class="chip toggle ${viewersOf(it).includes(v) ? 'on' : ''}" data-action="toggle-viewer" data-id="${eid}" data-value="${esc(v)}">${esc(vl(v))}</button>`).join('')}</div></dd>` : ''}
         </dl>
-        ${inList ? `<div class="my-rating"><span class="muted">Моята оценка:</span>${starsHtml(it, 'lg')}</div>${seasonHtml(it)}
-          <label class="comment-box"><span class="muted">Коментар</span>
-            <textarea id="comment-input" data-id="${eid}" maxlength="1000" rows="3" placeholder="Какво ви хареса или не… (запазва се автоматично)">${esc(it.comment || '')}</textarea></label>` : ''}
+        ${inList ? `<div class="my-rating"><span class="muted">${t('detail.myRating')}</span>${starsHtml(it, 'lg')}</div>${seasonHtml(it)}
+          <label class="comment-box"><span class="muted">${t('detail.comment')}</span>
+            <textarea id="comment-input" data-id="${eid}" maxlength="1000" rows="3" placeholder="${t('detail.commentPh')}">${esc(it.comment || '')}</textarea></label>` : ''}
         <div class="detail-actions">${actions}</div>
-        ${isId(id) ? `<a href="https://www.imdb.com/title/${eid}/" target="_blank" rel="noopener noreferrer">Отвори в IMDb ↗</a>` : ''}
+        ${isId(id) ? `<a href="https://www.imdb.com/title/${eid}/" target="_blank" rel="noopener noreferrer">${t('detail.imdb')}</a>` : ''}
       </div>
     </div>`;
   state.detailId = id;
@@ -634,12 +623,12 @@ function buildProfile(viewer = state.recViewer) {
 function scoreItem(it, p) {
   const parts = [];
   it.genre.forEach(g => { const v = p.genre.get(g); if (v) parts.push({ v, t: tg(g) }); });
-  it.director.forEach(d => { const v = p.director.get(d); if (v) parts.push({ v, t: 'Реж. ' + d }); });
+  it.director.forEach(d => { const v = p.director.get(d); if (v) parts.push({ v, t: t('reason.dir', { name: d }) }); });
   it.actors.forEach(a => { const v = p.actors.get(a); if (v) parts.push({ v, t: a }); });
   let s = parts.reduce((sum, x) => sum + x.v, 0);
   if (it.rating != null) s += (it.rating - 7) * 1.5;
   const reasons = parts.filter(x => x.v > 0).sort((a, b) => b.v - a.v).slice(0, 3).map(x => x.t);
-  if (it.rating >= 8.5) reasons.push('Топ рейтинг');
+  if (it.rating >= 8.5) reasons.push(t('reason.top'));
   return { it, s, reasons };
 }
 
@@ -698,7 +687,7 @@ async function loadRecs(force = false) {
     for (let j = 0; j < top.length; j += 6) {
       const batch = top.slice(j, j + 6);
       const res = await Promise.allSettled(batch.map(resolveCandidate));
-      const fatal = res.find(x => x.status === 'rejected' && /лимит|ключ/i.test(x.reason?.message));
+      const fatal = res.find(x => x.status === 'rejected' && x.reason?.fatal);
       if (fatal) throw fatal.reason;
       res.forEach((x, i) => {
         if (x.status === 'fulfilled' && x.value) out.push({ it: x.value, because: batch[i].because, s: batch[i].score * 2 + scoreItem(x.value, p).s });
@@ -727,10 +716,10 @@ function renderRecommend() {
   const candidates = SEED.filter(id => state.discover[id] && !byId(id)).map(id => scoreItem(state.discover[id], p)).sort((a, b) => b.s - a.s);
   const missing = SEED.some(id => !state.discover[id] && !byId(id));
 
-  const byType = (entries, limit, toCard, emptyText) => [['movie', 'Филми'], ['series', 'Сериали']]
-    .filter(([t]) => !state.recType || state.recType === t)
-    .map(([t, label]) => {
-      const list = entries.filter(e => e.it.type === t).slice(0, limit);
+  const byType = (entries, limit, toCard, emptyText) => [['movie', t('rec.movies')], ['series', t('rec.series')]]
+    .filter(([ty]) => !state.recType || state.recType === ty)
+    .map(([ty, label]) => {
+      const list = entries.filter(e => e.it.type === ty).slice(0, limit);
       return `<div class="subsection"><h3>${label} <span class="muted small">${list.length}</span></h3>
         ${list.length ? `<div class="grid">${list.map(toCard).join('')}</div>` : `<p class="muted small">${emptyText}</p>`}</div>`;
     }).join('');
@@ -738,46 +727,46 @@ function renderRecommend() {
   const tg2 = topEntries(p.genre), td = topEntries(p.director, 5), ta = topEntries(p.actors, 6);
   const chips = (arr, key, fn = x => x) => arr.length
     ? `<div class="chips">${arr.map(v => `<button class="chip" data-action="filter" data-key="${key}" data-value="${esc(v)}">${esc(fn(v))}</button>`).join('')}</div>`
-    : '<span class="muted small">Още няма данни</span>';
+    : `<span class="muted small">${t('rec.noData')}</span>`;
 
-  let html = `<div class="rec-for"><span class="muted">Препоръки за:</span>${['', ...VIEWERS].map(v =>
-    `<button class="chip toggle ${state.recViewer === v ? 'on' : ''}" data-action="rec-viewer" data-value="${esc(v)}">${v ? esc(v) : 'Всички'}</button>`).join('')}
-    <span class="muted rec-sep">Покажи:</span>${[['', 'Филми и сериали'], ['movie', 'Филми'], ['series', 'Сериали']].map(([v, label]) =>
+  let html = `<div class="rec-for"><span class="muted">${t('rec.for')}</span>${['', ...VIEWERS].map(v =>
+    `<button class="chip toggle ${state.recViewer === v ? 'on' : ''}" data-action="rec-viewer" data-value="${esc(v)}">${v ? esc(vl(v)) : t('rec.everyone')}</button>`).join('')}
+    <span class="muted rec-sep">${t('rec.show')}</span>${[['', t('type.both')], ['movie', t('rec.movies')], ['series', t('rec.series')]].map(([v, label]) =>
     `<button class="chip toggle ${state.recType === v ? 'on' : ''}" data-action="rec-type" data-value="${v}">${label}</button>`).join('')}</div>`;
-  html += `<div class="section-title"><h2>Вашият вкус</h2></div>`;
+  html += `<div class="section-title"><h2>${t('rec.taste')}</h2></div>`;
   html += p.rated
     ? `<div class="panel taste">
-        <div><h4>Любими жанрове</h4>${chips(tg2, 'genre', tg)}</div>
-        <div><h4>Любими режисьори</h4>${chips(td, 'director')}</div>
-        <div><h4>Любими актьори</h4>${chips(ta, 'actor')}</div>
+        <div><h4>${t('rec.genres')}</h4>${chips(tg2, 'genre', tg)}</div>
+        <div><h4>${t('rec.directors')}</h4>${chips(td, 'director')}</div>
+        <div><h4>${t('rec.actors')}</h4>${chips(ta, 'actor')}</div>
       </div>`
-    : `<div class="panel muted">Оценете гледаните заглавия със звезди (★ до ★★★★★), за да станат препоръките лични. Дотогава подреждаме по рейтинг в IMDb.</div>`;
+    : `<div class="panel muted">${t('rec.rateHint')}</div>`;
 
-  html += `<div class="section-title"><h2>Защото харесахте…</h2>
-    ${hasTmdb && liked.length ? `<button class="btn ghost sm" data-action="load-recs" ${r.loading ? 'disabled' : ''}>${r.loading ? 'Зареждане...' : 'Обнови'}</button>` : ''}</div>`;
+  html += `<div class="section-title"><h2>${t('rec.because')}</h2>
+    ${hasTmdb && liked.length ? `<button class="btn ghost sm" data-action="load-recs" ${r.loading ? 'disabled' : ''}>${r.loading ? t('loading') : t('refresh')}</button>` : ''}</div>`;
   if (!hasTmdb) {
-    html += `<div class="panel muted">Добавете TMDB ключ в Настройки, за да получавате заглавия, подобни на харесаните.</div>`;
+    html += `<div class="panel muted">${t('rec.needTmdb')}</div>`;
   } else if (!liked.length) {
-    html += `<div class="panel muted">${state.recViewer ? `Няма заглавия с ★★★ и повече, гледани от „${esc(state.recViewer)}“.` : 'Няма заглавия с ★★★ и повече.'} Предложения се дават само за заглавия, оценени с ★★★ или повече.</div>`;
+    html += `<div class="panel muted">${state.recViewer ? esc(t('rec.noLikedFor', { name: vl(state.recViewer) })) : t('rec.noLiked')} ${t('rec.onlyLiked')}</div>`;
   } else {
     const recs = r.items.filter(x => !byId(x.it.imdbID));
-    if (recs.length || !r.loading) html += byType(recs, 12, x => card(x.it, { discover: true, reasons: x.because.slice(0, 2).map(t => `Като „${t}“`) }),
-      r.loading ? 'Зареждане…' : 'Няма предложения — оценете с ★★★ или повече заглавия от този вид.');
+    if (recs.length || !r.loading) html += byType(recs, 12, x => card(x.it, { discover: true, reasons: x.because.slice(0, 2).map(title => t('reason.like', { title })) }),
+      r.loading ? t('loading') : t('rec.noneType'));
     if (r.loading) html += '<div class="loader"></div>';
     else if (r.error) html += `<p class="hint error">${esc(r.error)}</p>`;
   }
 
-  html += `<div class="section-title"><h2>Гледайте следващо</h2><span class="muted small">от вашия списък</span></div>`;
+  html += `<div class="section-title"><h2>${t('rec.next')}</h2><span class="muted small">${t('rec.fromList')}</span></div>`;
   html += watchlist.length
-    ? byType(watchlist, 10, x => card(x.it, { reasons: x.reasons }), 'Няма заглавия от този вид в „За гледане“.')
-    : emptyState('Списъкът за гледане е празен', 'Добавете заглавия, за да получите препоръки.');
+    ? byType(watchlist, 10, x => card(x.it, { reasons: x.reasons }), t('rec.noneInList'))
+    : emptyState(t('rec.emptyList.h'), t('rec.emptyList.p'));
 
-  html += `<div class="section-title"><h2>Открийте нещо ново</h2>
-    ${p.rated ? `<button class="btn primary sm" data-action="discover-taste">Намери нови по моя вкус</button>` : ''}
-    ${missing ? `<button class="btn ghost sm" data-action="load-discover" ${state.loadingDiscover ? 'disabled' : ''}>${state.loadingDiscover ? 'Зареждане...' : 'Зареди предложения от IMDb'}</button>` : ''}</div>`;
+  html += `<div class="section-title"><h2>${t('rec.new')}</h2>
+    ${p.rated ? `<button class="btn primary sm" data-action="discover-taste">${t('rec.findTaste')}</button>` : ''}
+    ${missing ? `<button class="btn ghost sm" data-action="load-discover" ${state.loadingDiscover ? 'disabled' : ''}>${state.loadingDiscover ? t('loading') : t('rec.loadSeed')}</button>` : ''}</div>`;
   html += state.loadingDiscover && !candidates.length ? '<div class="loader"></div>'
-    : candidates.length ? byType(candidates, 8, x => card(x.it, { discover: true, reasons: x.reasons }), 'Няма заглавия от този вид.')
-    : `<div class="panel muted">Натиснете „Зареди предложения“, за да получите топ заглавия от IMDb, подредени според вашия вкус.</div>`;
+    : candidates.length ? byType(candidates, 8, x => card(x.it, { discover: true, reasons: x.reasons }), t('rec.noneKind'))
+    : `<div class="panel muted">${t('rec.seedHint')}</div>`;
 
   c.innerHTML = html;
 }
@@ -796,7 +785,7 @@ async function loadDiscover() {
   localStorage.setItem(LS_DISCOVER, JSON.stringify(state.discover));
   state.loadingDiscover = false;
   render();
-  if (failed) toast(`${failed} заглавия не бяха заредени`, 'warn');
+  if (failed) toast(t('toast.notLoaded', { n: failed }), 'warn');
 }
 
 /* ---------- Discover by criteria (TMDB lists + IMDb data via OMDb) ---------- */
@@ -804,14 +793,14 @@ async function tmdb(path, params = {}) {
   const key = localStorage.getItem(LS_TMDB);
   if (!key) {
     openSettings();
-    throw new Error('Въведете TMDB API ключ в Настройки');
+    throw fail(t('err.noTmdb'), true);
   }
   const bearer = key.startsWith('eyJ');
   const qs = new URLSearchParams(bearer ? params : { ...params, api_key: key });
   const res = await fetch(`https://api.themoviedb.org/3${path}?${qs}`,
     bearer ? { headers: { Authorization: 'Bearer ' + key } } : undefined);
   const d = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(res.status === 401 ? 'Невалиден TMDB ключ' : (d.status_message || 'TMDB грешка ' + res.status));
+  if (!res.ok) throw fail(res.status === 401 ? t('err.badTmdb') : (d.status_message || t('err.tmdb', { code: res.status })), res.status === 401);
   return d;
 }
 
@@ -819,7 +808,7 @@ async function personId(name) {
   const key = name.trim().toLowerCase();
   if (personCache.has(key)) return personCache.get(key);
   const d = await tmdb('/search/person', { query: name.trim(), include_adult: 'false' });
-  if (!d.results?.length) throw new Error(`Не е намерен човек с име „${name}“`);
+  if (!d.results?.length) throw new Error(t('err.person', { name }));
   personCache.set(key, d.results[0].id);
   return d.results[0].id;
 }
@@ -862,7 +851,7 @@ async function studioIds(name) {
     companies: (d.results || []).filter(x => re.test(x.name.toLowerCase())).slice(0, 15).map(x => x.id),
     networks: alias?.networks || []
   };
-  if (!res.companies.length && !res.networks.length) throw new Error(`Не е намерено студио или платформа „${name}“`);
+  if (!res.companies.length && !res.networks.length) throw new Error(t('err.studio', { name }));
   studioCache.set(key, res);
   return res;
 }
@@ -984,7 +973,7 @@ async function runDiscover(reset) {
   const d = state.disc;
   if (d.loading) return;
   if (!localStorage.getItem(LS_TMDB) || !localStorage.getItem(LS_KEY)) {
-    toast('Нужни са TMDB и OMDb ключове', 'warn');
+    toast(t('toast.needKeys'), 'warn');
     openSettings();
     return;
   }
@@ -1002,7 +991,7 @@ async function runDiscover(reset) {
       d.more = more;
       for (let j = 0; j < out.length; j += 6) {
         const res = await Promise.allSettled(out.slice(j, j + 6).map(resolveCandidate));
-        const fatal = res.find(r => r.status === 'rejected' && /лимит|ключ/i.test(r.reason?.message));
+        const fatal = res.find(r => r.status === 'rejected' && r.reason?.fatal);
         if (fatal) throw fatal.reason;
         res.forEach(r => {
           const it = r.status === 'fulfilled' && r.value;
@@ -1023,17 +1012,17 @@ function renderDiscover() {
   const d = state.disc;
   const c = $('#content');
   $('#d-search').disabled = d.loading;
-  $('#d-status').textContent = d.loading ? 'Търсене и зареждане на данни от IMDb...' : '';
+  $('#d-status').textContent = d.loading ? t('d.loading') : '';
 
   if (!localStorage.getItem(LS_TMDB)) {
-    c.innerHTML = `<div class="empty"><h3>Нужен е TMDB ключ</h3>
-      <p>Списъкът по критерии се взима от TMDB, а данните и рейтингът — от IMDb. Ключът е безплатен.</p>
-      <button class="btn primary" data-action="open-settings">Въведи ключ</button></div>`;
+    c.innerHTML = `<div class="empty"><h3>${t('d.needTmdb.h')}</h3>
+      <p>${t('d.needTmdb.p')}</p>
+      <button class="btn primary" data-action="open-settings">${t('d.enterKey')}</button></div>`;
     return;
   }
   if (!d.page && !d.loading) {
     c.innerHTML = d.error ? `<p class="hint error">${esc(d.error)}</p>`
-      : emptyState('Задайте критерии', 'Въведете ключова дума или изберете жанр, актьор, режисьор, рейтинг или години и натиснете „Търси“.', false);
+      : emptyState(t('d.criteria.h'), t('d.criteria.p'), false);
     return;
   }
   const votes = i => parseInt(String(i.votes).replace(/\D/g, ''), 10) || 0;
@@ -1046,13 +1035,13 @@ function renderDiscover() {
   if (sorter) list.sort(sorter);
   const owned = list.filter(i => byId(i.imdbID)).length;
   let html = list.length
-    ? `<div class="section-title"><h2>Намерени: ${list.length}${owned ? ` <span class="muted small">· ${owned} вече в списъците</span>` : ''}</h2>
-        ${list.length > owned ? `<button class="btn ghost sm" data-action="add-all">${ICON.plus} Добави всички нови за гледане</button>` : ''}</div>
+    ? `<div class="section-title"><h2>${t('d.found', { n: list.length })}${owned ? ` <span class="muted small">· ${t('d.owned', { n: owned })}</span>` : ''}</h2>
+        ${list.length > owned ? `<button class="btn ghost sm" data-action="add-all">${ICON.plus} ${t('d.addAll')}</button>` : ''}</div>
        <div class="grid">${list.map(i => card(i, { discover: true })).join('')}</div>`
-    : d.loading ? '' : emptyState('Няма резултати', 'Разширете критериите — по-нисък рейтинг, повече жанрове или по-широк период.', false);
+    : d.loading ? '' : emptyState(t('noResults.h'), t('d.noResults.p'), false);
   if (d.error) html += `<p class="hint error">${esc(d.error)}</p>`;
   html += d.loading ? '<div class="loader"></div>'
-    : d.more ? '<div class="center"><button class="btn ghost" data-action="discover-more">Зареди още</button></div>' : '';
+    : d.more ? `<div class="center"><button class="btn ghost" data-action="discover-more">${t('d.more')}</button></div>` : '';
   c.innerHTML = html;
 }
 
@@ -1066,10 +1055,15 @@ function syncCriteriaInputs() {
   $$('#d-genres .chip').forEach(b => b.classList.toggle('on', c.genres.includes(b.dataset.value)));
 }
 
-function initDiscoverForm() {
-  $('#dl-studios').innerHTML = Object.keys(PLATFORMS).map(p => `<option value="${esc(p)}">`).join('');
+function renderGenreChips() {
   $('#d-genres').innerHTML = GENRES.map(g =>
     `<button class="chip toggle" data-action="toggle-genre" data-value="${esc(g.key)}">${esc(tg(g.key))}</button>`).join('');
+  $$('#d-genres .chip').forEach(b => b.classList.toggle('on', state.disc.criteria.genres.includes(b.dataset.value)));
+}
+
+function initDiscoverForm() {
+  $('#dl-studios').innerHTML = Object.keys(PLATFORMS).map(p => `<option value="${esc(p)}">`).join('');
+  renderGenreChips();
   Object.entries(CRIT_INPUTS).forEach(([key, sel]) => $(sel).addEventListener('input', e => {
     state.disc.criteria[key] = key === 'minRating' ? parseFloat(e.target.value) : e.target.value;
     $('#d-rating-val').textContent = state.disc.criteria.minRating;
@@ -1090,7 +1084,7 @@ async function doSearch() {
   const q = $('#add-input').value.trim();
   const box = $('#add-results');
   const seq = ++searchSeq;
-  if (q.length < 2) { box.innerHTML = '<p class="hint">Въведете поне 2 символа.</p>'; return; }
+  if (q.length < 2) { box.innerHTML = `<p class="hint">${t('add.min2')}</p>`; return; }
   box.innerHTML = '<div class="loader"></div>';
   try {
     const m = q.match(/tt\d{6,10}/);
@@ -1117,8 +1111,8 @@ function resultRow(r) {
     <div class="result-info"><strong>${esc(r.Title)}</strong><span>${esc(r.Year)} · ${typeLabel(r.Type)}</span></div>
     <div class="result-actions">${byId(r.imdbID)
       ? statusTag(byId(r.imdbID))
-      : `<button class="btn sm primary" data-action="add" data-id="${id}">${ICON.plus} За гледане</button>
-         <button class="btn sm ghost" data-action="add-watched" data-id="${id}">Гледах го</button>`}</div>
+      : `<button class="btn sm primary" data-action="add" data-id="${id}">${ICON.plus} ${t('btn.toWatch')}</button>
+         <button class="btn sm ghost" data-action="add-watched" data-id="${id}">${t('btn.watchedIt')}</button>`}</div>
   </div>`;
 }
 
@@ -1129,14 +1123,32 @@ function openSettings() {
   openModal('settings');
 }
 
+function setLang(lang) {
+  LANG = lang === 'en' ? 'en' : 'bg';
+  localStorage.setItem(LS_LANG, LANG);
+  localize();
+  render();
+  if (state.detailId && !$('#modal-detail').hidden) openDetail(state.detailId);
+}
+
+// static texts + labels built from data (genres, viewer names)
+function localize() {
+  applyI18n();
+  $$('#f-viewer option').forEach(o => { if (VIEWERS.includes(o.value)) o.textContent = vl(o.value); });
+  renderGenreChips();
+  $('#lang-flag').innerHTML = FLAGS[LANG];
+  $('#lang-name').textContent = LANG === 'en' ? 'English' : 'Български';
+  $('#lang-btn').title = t('lang.toggle');
+}
+
 async function saveTmdbKey() {
   const key = $('#tmdb-key').value.trim();
-  if (!/^[a-f0-9]{32}$/i.test(key) && !/^eyJ[\w.-]+$/.test(key)) { toast('Невалиден формат на TMDB ключа', 'error'); return; }
+  if (!/^[a-f0-9]{32}$/i.test(key) && !/^eyJ[\w.-]+$/.test(key)) { toast(t('key.badTmdbFormat'), 'error'); return; }
   const prev = localStorage.getItem(LS_TMDB);
   localStorage.setItem(LS_TMDB, key);
   try {
     await tmdb('/configuration');
-    toast('TMDB ключът е запазен и работи');
+    toast(t('key.tmdbOk'));
     window.W2W?.onKeysChanged?.();
     render();
   } catch (err) {
@@ -1147,12 +1159,12 @@ async function saveTmdbKey() {
 
 async function saveKey() {
   const key = $('#api-key').value.trim();
-  if (!/^[A-Za-z0-9]{6,20}$/.test(key)) { toast('Невалиден формат на ключа', 'error'); return; }
+  if (!/^[A-Za-z0-9]{6,20}$/.test(key)) { toast(t('key.badFormat'), 'error'); return; }
   const prev = localStorage.getItem(LS_KEY);
   localStorage.setItem(LS_KEY, key);
   try {
     await omdb({ i: 'tt0111161' });
-    toast('OMDb ключът е запазен и работи');
+    toast(t('key.omdbOk'));
     window.W2W?.onKeysChanged?.();
     render();
   } catch (err) {
@@ -1166,14 +1178,14 @@ async function refreshRatings(btn) {
   btn.disabled = true;
   let ok = 0;
   for (const it of state.items) {
-    btn.textContent = `Обновяване ${ok + 1}/${state.items.length}...`;
+    btn.textContent = t('refreshing', { i: ok + 1, n: state.items.length });
     try { Object.assign(it, mapDetails(await omdb({ i: it.imdbID, plot: 'full' }))); ok++; } catch { /* skip failed */ }
   }
   save();
   render();
   btn.disabled = false;
-  btn.textContent = 'Обнови рейтингите';
-  toast(`Обновени ${ok} от ${state.items.length} заглавия`);
+  btn.textContent = t('settings.refresh');
+  toast(t('toast.refreshed', { ok, n: state.items.length }));
 }
 
 function exportData() {
@@ -1218,19 +1230,19 @@ $('#import-file').addEventListener('change', async e => {
     });
     save();
     render();
-    toast(`Импортирани ${added} заглавия`);
+    toast(t('toast.imported', { n: added }));
   } catch {
-    toast('Невалиден файл', 'error');
+    toast(t('toast.badFile'), 'error');
   }
 });
 
 function clearAll() {
-  if (!confirm('Сигурни ли сте, че искате да изтриете всички заглавия?')) return;
+  if (!confirm(t('confirm.clear'))) return;
   state.items = [];
   save();
   closeModals();
   render();
-  toast('Всички данни са изтрити', 'warn');
+  toast(t('toast.cleared'), 'warn');
 }
 
 /* ---------- New seasons ---------- */
@@ -1239,7 +1251,7 @@ async function checkNewSeasons(manual = false) {
   const DAY = 864e5;
   const list = state.items.filter(i => i.status === 'watched' && i.type === 'series' &&
     (manual || !i.seasonCheckedAt || Date.now() - i.seasonCheckedAt > DAY));
-  if (!list.length) { if (manual) toast('Няма гледани сериали за проверка'); return; }
+  if (!list.length) { if (manual) toast(t('toast.noSeries')); return; }
   const moved = [];
   for (let j = 0; j < list.length; j += 5) {
     const batch = list.slice(j, j + 5);
@@ -1259,8 +1271,8 @@ async function checkNewSeasons(manual = false) {
   }
   save();
   render();
-  if (moved.length) toast(`Нов сезон: ${moved.join(', ')} — преместено в „За гледане“`);
-  else if (manual) toast('Няма нови сезони');
+  if (moved.length) toast(t('toast.newSeason', { list: moved.join(', ') }));
+  else if (manual) toast(t('toast.noNewSeasons'));
 }
 
 /* ---------- Comments ---------- */
@@ -1310,6 +1322,7 @@ window.addEventListener('scroll', () => {
 }, { passive: true });
 
 /* ---------- Init ---------- */
+localize();
 document.body.classList.toggle('sb-pinned', localStorage.getItem(LS_SIDEBAR) === '1');
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -1331,6 +1344,7 @@ function start() {
 window.W2W = {
   start,
   toast,
+  t,
   items: () => state.items,
   keys: () => ({ omdb: localStorage.getItem(LS_KEY) || '', tmdb: localStorage.getItem(LS_TMDB) || '' }),
   setKeys({ omdb, tmdb }) {
