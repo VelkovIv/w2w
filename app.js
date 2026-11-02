@@ -108,6 +108,10 @@ const split = s => (!s || s === 'N/A') ? [] :
 const ratingClass = r => r >= 8 ? 'high' : r >= 6.5 ? 'mid' : 'low';
 const typeLabel = t2 => t2 === 'series' ? t('type.seriesOne') : t('type.movie');
 const yearNum = y => parseInt(y, 10) || 0;
+const votesNum = i => parseInt(String(i.votes ?? '').replace(/\D/g, ''), 10) || 0;
+// suggestions (Discover / Recommendations) only show titles with at least this many IMDb votes
+const MIN_VOTES = 50000;
+const popular = i => votesNum(i) >= MIN_VOTES;
 // errors that make further requests pointless (missing/invalid key, daily limit)
 const fail = (msg, fatal = false) => Object.assign(new Error(msg), { fatal });
 
@@ -771,7 +775,7 @@ async function loadRecs(force = false) {
       const fatal = res.find(x => x.status === 'rejected' && x.reason?.fatal);
       if (fatal) throw fatal.reason;
       res.forEach((x, i) => {
-        if (x.status === 'fulfilled' && x.value) out.push({ it: x.value, because: batch[i].because, s: batch[i].score * 2 + scoreItem(x.value, p).s });
+        if (x.status === 'fulfilled' && x.value && popular(x.value)) out.push({ it: x.value, because: batch[i].because, s: batch[i].score * 2 + scoreItem(x.value, p).s });
       });
     }
     r.items = out.sort((a, b) => b.s - a.s);
@@ -794,7 +798,7 @@ function renderRecommend() {
   // a viewer sees titles marked for them or not assigned to anyone yet
   const viewerOk = it => !state.recViewer || !viewersOf(it).length || viewersOf(it).includes(state.recViewer);
   const watchlist = state.items.filter(i => i.status === 'towatch' && viewerOk(i)).map(i => scoreItem(i, p)).sort((a, b) => b.s - a.s);
-  const candidates = SEED.filter(id => state.discover[id] && !byId(id)).map(id => scoreItem(state.discover[id], p)).sort((a, b) => b.s - a.s);
+  const candidates = SEED.filter(id => state.discover[id] && !byId(id) && popular(state.discover[id])).map(id => scoreItem(state.discover[id], p)).sort((a, b) => b.s - a.s);
   const missing = SEED.some(id => !state.discover[id] && !byId(id));
 
   const byType = (entries, limit, toCard, emptyText) => [['movie', t('rec.movies')], ['series', t('rec.series')]]
@@ -903,7 +907,8 @@ function discoverParams(t, c, gids, actorId, directorId, page, kwIds = [], studi
     page,
     include_adult: 'false',
     sort_by: { popularity: 'popularity.desc', rating: 'vote_average.desc', newest: date + '.desc' }[c.sort] || 'popularity.desc',
-    'vote_count.gte': (c.keyword.trim() || c.studio.trim()) ? (c.sort === 'rating' ? 50 : 5) : (c.sort === 'rating' ? 500 : 100),
+    // rough TMDB equivalent of MIN_VOTES on IMDb; saves OMDb calls on titles that would be dropped
+    'vote_count.gte': c.sort === 'rating' ? 500 : 300,
     [date + '.lte']: validYear(c.yearTo) ? `${c.yearTo}-12-31` : today()
   };
   if (gids.length) p.with_genres = gids.join('|');
@@ -976,7 +981,7 @@ async function tvCreditsList(c, gids, actorId, directorId) {
       rowMatches(r, c, gids, 'tv') &&
       (!kw || titleOf(r).includes(kw)) &&
       (!c.minRating || r.vote_average >= c.minRating - 1) &&
-      (r.vote_count || 0) >= 10;
+      (r.vote_count || 0) >= 300;
   });
   const key = { rating: r => -r.vote_average, newest: r => -(Date.parse(r.first_air_date) || 0) }[c.sort] || (r => -r.popularity);
   list.sort((a, b) => key(a) - key(b));
@@ -1034,7 +1039,7 @@ async function resolveCandidate({ id, t }) {
   return state.discover[imdb];
 }
 
-const matchesCriteria = (it, c) =>
+const matchesCriteria = (it, c) => popular(it) &&
   (!c.minRating || (it.rating ?? 0) >= c.minRating) &&
   (!c.genres.length || it.genre.some(g => c.genres.includes(g)));
 
@@ -1106,11 +1111,10 @@ function renderDiscover() {
       : emptyState(t('d.criteria.h'), t('d.criteria.p'), false);
     return;
   }
-  const votes = i => parseInt(String(i.votes).replace(/\D/g, ''), 10) || 0;
   const sorter = {
     rating: (a, b) => (b.rating ?? 0) - (a.rating ?? 0),
     newest: (a, b) => yearNum(b.year) - yearNum(a.year),
-    popularity: (a, b) => votes(b) - votes(a)
+    popularity: (a, b) => votesNum(b) - votesNum(a)
   }[d.criteria.sort];
   const list = [...d.results];
   if (sorter) list.sort(sorter);

@@ -42,6 +42,7 @@
 - **Discover** — titles are fetched automatically by criteria:
   keyword / franchise (e.g. *Star Wars*), genre, actor, director, **studio or platform** (Apple TV+, Disney+, Netflix, HBO…), minimum IMDb rating, years, language.
 - Titles already in your lists are shown with a label of their category.
+- **Discover** and **Recommendations** only show titles with **over 50,000 IMDb votes**.
 - Filters and sorting by actor, director, genre, rating, type, my rating and viewer.
 
 ### Recommendations
