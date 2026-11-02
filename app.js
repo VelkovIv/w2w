@@ -401,11 +401,26 @@ $$('.nav-btn[data-view]').forEach(b => b.addEventListener('click', () => {
 }));
 
 /* ---------- Modals ---------- */
+// an open modal owns one history entry, so the phone's Back button closes it instead of leaving the app
+let modalHist = false, backPending = false;
+const anyModalOpen = () => [...$$('.modal')].some(m => !m.hidden);
+
 function openModal(name) {
   $('#modal-' + name).hidden = false;
   document.body.classList.add('noscroll');
+  // while history.back() is in flight, the popstate handler re-adds the entry
+  if (!modalHist && !backPending) { history.pushState({ w2wModal: 1 }, ''); modalHist = true; }
 }
+window.addEventListener('popstate', () => {
+  if (backPending) {
+    backPending = false;
+    if (anyModalOpen()) { history.pushState({ w2wModal: 1 }, ''); modalHist = true; }
+    return;
+  }
+  if (modalHist) { modalHist = false; closeModals(); }
+});
 function closeModals() {
+  if (modalHist) { modalHist = false; backPending = true; history.back(); }
   $$('.modal').forEach(m => m.hidden = true);
   document.body.classList.remove('noscroll');
   state.detailId = null;
