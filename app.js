@@ -409,6 +409,10 @@ function closeModals() {
   $$('.modal').forEach(m => m.hidden = true);
   document.body.classList.remove('noscroll');
   state.detailId = null;
+  trailerFor = null;
+  // removing the iframe stops playback
+  $('#detail-trailer').replaceChildren();
+  $('#detail-trailer').hidden = true;
 }
 
 /* ---------- Filters ---------- */
@@ -625,7 +629,45 @@ function openDetail(id) {
       </div>
     </div>`;
   state.detailId = id;
+  // the trailer lives outside #detail-body so re-renders don't restart it
+  if (trailerFor !== id) loadTrailer(id, it);
   openModal('detail');
+}
+
+/* ---------- Trailer (TMDB videos -> YouTube) ---------- */
+let trailerFor = null;
+const trailerCache = new Map();
+
+async function trailerKey(imdbID) {
+  const ck = imdbID + LANG;
+  if (trailerCache.has(ck)) return trailerCache.get(ck);
+  const ref = await tmdbRef(imdbID);
+  let key = null;
+  if (ref) {
+    const d = await tmdb(`/${ref.t}/${ref.id}/videos`, { include_video_language: `${LANG},en,null` });
+    const score = v => (v.type === 'Trailer' ? 4 : 0) + (v.iso_639_1 === LANG ? 2 : 0) + (v.official ? 1 : 0);
+    key = (d.results || [])
+      .filter(v => v.site === 'YouTube' && /^[\w-]{11}$/.test(v.key) && (v.type === 'Trailer' || v.type === 'Teaser'))
+      .sort((a, b) => score(b) - score(a))[0]?.key || null;
+  }
+  trailerCache.set(ck, key);
+  return key;
+}
+
+async function loadTrailer(id, it) {
+  trailerFor = id;
+  const box = $('#detail-trailer');
+  box.replaceChildren();
+  box.hidden = true;
+  const key = isId(id) && localStorage.getItem(LS_TMDB) ? await trailerKey(id).catch(() => null) : null;
+  if (trailerFor !== id) return;
+  const search = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(`${it.title} ${yearNum(it.year) || ''} trailer`);
+  box.innerHTML = key
+    ? `<h3>${t('detail.trailer')}</h3>
+       <div class="trailer-frame"><iframe src="https://www.youtube-nocookie.com/embed/${key}?rel=0" title="${t('detail.trailer')}: ${esc(it.title)}"
+         allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`
+    : `<a href="${esc(search)}" target="_blank" rel="noopener noreferrer">${t('detail.trailerSearch')}</a>`;
+  box.hidden = false;
 }
 
 /* ---------- Recommendations ---------- */

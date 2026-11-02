@@ -81,6 +81,7 @@ const I18N = {
     'detail.votes': 'гласа', 'detail.noPlot': 'Няма описание.', 'detail.creators': 'Създатели', 'detail.director': 'Режисьор',
     'detail.actors': 'Актьори', 'detail.watchedBy': 'Гледано от', 'detail.myRating': 'Моята оценка:', 'detail.comment': 'Коментар',
     'detail.commentPh': 'Какво ви хареса или не… (запазва се автоматично)', 'detail.imdb': 'Отвори в IMDb ↗',
+    'detail.trailer': 'Трейлър', 'detail.trailerSearch': 'Търси трейлър в YouTube ↗',
 
     'reason.dir': 'Реж. {name}', 'reason.top': 'Топ рейтинг', 'reason.like': 'Като „{title}“',
     'rec.for': 'Препоръки за:', 'rec.everyone': 'Всички', 'rec.show': 'Покажи:', 'rec.movies': 'Филми', 'rec.series': 'Сериали',
@@ -188,6 +189,7 @@ const I18N = {
     'detail.votes': 'votes', 'detail.noPlot': 'No description.', 'detail.creators': 'Creators', 'detail.director': 'Director',
     'detail.actors': 'Cast', 'detail.watchedBy': 'Watched by', 'detail.myRating': 'My rating:', 'detail.comment': 'Comment',
     'detail.commentPh': 'What did you like or not… (saved automatically)', 'detail.imdb': 'Open on IMDb ↗',
+    'detail.trailer': 'Trailer', 'detail.trailerSearch': 'Search for a trailer on YouTube ↗',
 
     'reason.dir': 'Dir. {name}', 'reason.top': 'Top rated', 'reason.like': 'Like "{title}"',
     'rec.for': 'Recommendations for:', 'rec.everyone': 'Everyone', 'rec.show': 'Show:', 'rec.movies': 'Movies', 'rec.series': 'Series',
