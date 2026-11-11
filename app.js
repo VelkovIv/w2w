@@ -183,6 +183,8 @@ const studioCache = new Map();
 
 const saveLocal = () => localStorage.setItem(LS_ITEMS, JSON.stringify(state.items));
 const save = () => { saveLocal(); window.W2W?.onLocalSave?.(); };
+// key-order-independent snapshot of the items, to tell whether a sync changed anything
+const itemsKey = list => JSON.stringify(list.map(i => JSON.stringify(i, Object.keys(i).sort())));
 const byId = id => state.items.find(i => i.imdbID === id);
 
 function toast(msg, type = 'ok') {
@@ -377,7 +379,7 @@ async function handleAction(action, el) {
     default: return;
   }
   save();
-  render();
+  if (!patchCard(id)) render();
   if (state.detailId === id && !$('#modal-detail').hidden) openDetail(id);
 }
 
@@ -558,6 +560,23 @@ function renderList() {
   } else {
     c.innerHTML = `<div class="grid">${list.map(i => card(i)).join('')}</div>`;
   }
+}
+
+// replace one card in place when the list keeps the same items in the same order
+function patchCard(id) {
+  const grid = $('#content .grid');
+  const it = byId(id);
+  if (!grid || !it || state.view === 'recommend' || state.view === 'discover') return false;
+  const list = filtered();
+  const cards = [...grid.children];
+  if (list.length !== cards.length || list.some((i, n) => i.imdbID !== cards[n].dataset.id)) return false;
+  const tpl = document.createElement('template');
+  tpl.innerHTML = card(it).trim();
+  const fresh = tpl.content.firstElementChild;
+  fresh.style.animation = 'none'; // already on screen, so don't replay the entrance animation
+  cards[list.findIndex(i => i.imdbID === id)].replaceWith(fresh);
+  renderStats();
+  return true;
 }
 
 function posterHtml(it) {
@@ -1525,10 +1544,13 @@ window.W2W = {
     if (tmdb) localStorage.setItem(LS_TMDB, tmdb);
   },
   applyRemote(items) {
+    const before = itemsKey(state.items);
     state.items = items.filter(i => i && isId(i.imdbID) && typeof i.title === 'string')
       .sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
     saveLocal();
     if (!started) return;
+    // the cloud echoes our own saves back; nothing visible changed, so don't rebuild the list
+    if (itemsKey(state.items) === before) return;
     render();
     // don't rebuild the detail while the user is typing a comment
     if (state.detailId && !$('#modal-detail').hidden && document.activeElement?.id !== 'comment-input') openDetail(state.detailId);
