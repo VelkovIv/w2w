@@ -501,6 +501,10 @@ function populateFilterOptions() {
 }
 
 /* ---------- Rendering ---------- */
+// the cards fade in only the first time a view is shown; re-renders on the same view stay still
+let fadedView = null;
+const gridOpen = () => fadedView === state.view ? '<div class="grid">' : '<div class="grid enter">';
+
 function render() {
   $('#view-title').textContent = t('view.' + state.view);
   $('#view-sub').textContent = t('view.' + state.view + '.sub');
@@ -516,6 +520,7 @@ function render() {
   if (state.view === 'recommend') renderRecommend();
   else if (state.view === 'discover') renderDiscover();
   else { populateFilterOptions(); renderList(); }
+  fadedView = state.view;
 }
 
 function renderStats() {
@@ -558,7 +563,7 @@ function renderList() {
     c.innerHTML = `<div class="empty"><h3>${t('noResults.h')}</h3><p>${t('noResults.p')}</p>
       <button class="btn ghost" data-action="reset-filters">${t('clearFilters')}</button></div>`;
   } else {
-    c.innerHTML = `<div class="grid">${list.map(i => card(i)).join('')}</div>`;
+    c.innerHTML = `${gridOpen()}${list.map(i => card(i)).join('')}</div>`;
   }
 }
 
@@ -825,7 +830,7 @@ function renderRecommend() {
     .map(([ty, label]) => {
       const list = entries.filter(e => e.it.type === ty).slice(0, limit);
       return `<div class="subsection"><h3>${label} <span class="muted small">${list.length}</span></h3>
-        ${list.length ? `<div class="grid">${list.map(toCard).join('')}</div>` : `<p class="muted small">${emptyText}</p>`}</div>`;
+        ${list.length ? `${gridOpen()}${list.map(toCard).join('')}</div>` : `<p class="muted small">${emptyText}</p>`}</div>`;
     }).join('');
 
   const tg2 = topEntries(p.genre), td = topEntries(p.director, 5), ta = topEntries(p.actors, 6);
@@ -1141,7 +1146,7 @@ function renderDiscover() {
   let html = list.length
     ? `<div class="section-title"><h2>${t('d.found', { n: list.length })}${owned ? ` <span class="muted small">· ${t('d.owned', { n: owned })}</span>` : ''}</h2>
         ${list.length > owned ? `<button class="btn ghost sm" data-action="add-all">${ICON.plus} ${t('d.addAll')}</button>` : ''}</div>
-       <div class="grid">${list.map(i => card(i, { discover: true })).join('')}</div>`
+       ${gridOpen()}${list.map(i => card(i, { discover: true })).join('')}</div>`
     : d.loading ? '' : emptyState(t('noResults.h'), t('d.noResults.p'), false);
   if (d.error) html += `<p class="hint error">${esc(d.error)}</p>`;
   html += d.loading ? '<div class="loader"></div>'
