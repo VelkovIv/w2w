@@ -119,7 +119,7 @@ const popular = i => votesNum(i) >= MIN_VOTES;
 const fail = (msg, fatal = false) => Object.assign(new Error(msg), { fatal });
 
 const defaultFilters = () => ({ q: '', actor: '', director: '', genre: '', type: '', progress: '', opinion: '', viewer: '', minRating: 0, sort: 'added' });
-const defaultCriteria = () => ({ type: 'both', keyword: '', studio: '', genres: [], actor: '', director: '', minRating: 7, yearFrom: '', yearTo: '', lang: '', sort: 'popularity' });
+const defaultCriteria = () => ({ type: 'both', keyword: '', studio: '', genres: [], actor: '', director: '', minRating: 6, yearFrom: '', yearTo: '', lang: '', sort: 'popularity' });
 
 function loadCriteria() {
   const c = { ...defaultCriteria(), ...load(LS_CRITERIA, {}) };
@@ -881,7 +881,8 @@ function renderRecommend() {
       : `<button class="chip" data-action="filter" data-key="${key}" data-value="${esc(v)}">${esc(fn(v))}</button>`).join('')}</div>`
     : `<span class="muted small">${t('rec.noData')}</span>`;
 
-  let html = `<div class="rec-for"><span class="muted">${t('rec.for')}</span>${['', ...viewerIds()].map(v =>
+  let html = `<div class="rec-top"><button class="btn primary sm" data-action="discover-taste">${t('rec.findTaste')}</button></div>
+    <div class="rec-for"><span class="muted">${t('rec.for')}</span>${['', ...viewerIds()].map(v =>
     `<button class="chip toggle ${state.recViewer === v ? 'on' : ''}" data-action="rec-viewer" data-value="${esc(v)}">${v ? esc(viewerName(v)) : t('rec.everyone')}</button>`).join('')}
     <span class="muted rec-sep">${t('rec.show')}</span>${[['', t('type.both')], ['movie', t('rec.movies')], ['series', t('rec.series')]].map(([v, label]) =>
     `<button class="chip toggle ${state.recType === v ? 'on' : ''}" data-action="rec-type" data-value="${v}">${label}</button>`).join('')}</div>`;
@@ -917,7 +918,6 @@ function renderRecommend() {
     : emptyState(t('rec.emptyList.h'), t('rec.emptyList.p'));
 
   html += `<div class="section-title"><h2>${t('rec.new')}</h2>
-    ${p.rated ? `<button class="btn primary sm" data-action="discover-taste">${t('rec.findTaste')}</button>` : ''}
     ${missing ? `<button class="btn ghost sm" data-action="load-discover" ${state.loadingDiscover ? 'disabled' : ''}>${state.loadingDiscover ? t('loading') : t('rec.loadSeed')}</button>` : ''}</div>`;
   html += state.loadingDiscover && !candidates.length ? '<div class="loader"></div>'
     : candidates.length ? byType(candidates, 8, x => card(x.it, { discover: true, hideable: true, reasons: x.reasons }), t('rec.noneKind'))
