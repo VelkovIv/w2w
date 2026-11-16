@@ -293,7 +293,7 @@ async function handleAction(action, el) {
       return runDiscover(true);
     }
     case 'add-all': {
-      const list = state.disc.results.filter(i => !byId(i.imdbID));
+      const list = state.disc.results.filter(i => !byId(i.imdbID) && !hiddenRec(i.imdbID));
       const now = Date.now();
       list.forEach((it, idx) => state.items.unshift({ ...it, status: 'towatch', opinion: null, viewers: [], addedAt: now - idx, watchedAt: null }));
       save();
@@ -326,7 +326,7 @@ async function handleAction(action, el) {
       state.recType = ['movie', 'series'].includes(el.dataset.value) ? el.dataset.value : '';
       return render();
     case 'rec-hide': {
-      const item = byId(id) || state.discover[id] || state.recs.items.find(x => x.it.imdbID === id)?.it;
+      const item = byId(id) || state.discover[id] || state.disc.results.find(x => x.imdbID === id) || state.recs.items.find(x => x.it.imdbID === id)?.it;
       if (!isId(id) || !item) return;
       setRecHidden([...state.recHidden.filter(h => h.imdbID !== id), item]);
       closeModals();
@@ -363,9 +363,9 @@ async function handleAction(action, el) {
       if (!isId(id)) return;
       el.disabled = true;
       try {
-        await addTitle(id, action === 'add' ? 'towatch' : 'watched');
         const row = el.closest('.result-actions');
         if (row) row.innerHTML = statusTag(byId(id));
+        else render(); // a Discover or Recommendations card leaves its list once it is in the lists
         if (state.detailId === id) openDetail(id);
       } catch (err) {
         toast(err.message, 'error');
@@ -1200,13 +1200,12 @@ function renderDiscover() {
     newest: (a, b) => yearNum(b.year) - yearNum(a.year),
     popularity: (a, b) => votesNum(b) - votesNum(a)
   }[d.criteria.sort];
-  const list = [...d.results].filter(i => byId(i.imdbID)?.status !== 'watched');
+  const list = [...d.results].filter(i => !byId(i.imdbID) && !hiddenRec(i.imdbID));
   if (sorter) list.sort(sorter);
-  const owned = list.filter(i => byId(i.imdbID)).length;
   let html = list.length
-    ? `<div class="section-title"><h2>${t('d.found', { n: list.length })}${owned ? ` <span class="muted small">· ${t('d.owned', { n: owned })}</span>` : ''}</h2>
-        ${list.length > owned ? `<button class="btn ghost sm" data-action="add-all">${ICON.plus} ${t('d.addAll')}</button>` : ''}</div>
-       ${gridOpen()}${list.map(i => card(i, { discover: true })).join('')}</div>`
+    ? `<div class="section-title"><h2>${t('d.found', { n: list.length })}</h2>
+        <button class="btn ghost sm" data-action="add-all">${ICON.plus} ${t('d.addAll')}</button></div>
+       ${gridOpen()}${list.map(i => card(i, { discover: true, hideable: true })).join('')}</div>`
     : d.loading ? '' : emptyState(t('noResults.h'), t('d.noResults.p'), false);
   if (d.error) html += `<p class="hint error">${esc(d.error)}</p>`;
   html += d.loading ? '<div class="loader"></div>'

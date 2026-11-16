@@ -35,7 +35,7 @@ const I18N = {
     'd.loading': 'Търсене и зареждане на данни от IMDb...',
     'd.needTmdb.h': 'Нужен е TMDB ключ', 'd.needTmdb.p': 'Списъкът по критерии се взима от TMDB, а данните и рейтингът — от IMDb. Ключът е безплатен.', 'd.enterKey': 'Въведи ключ',
     'd.criteria.h': 'Задайте критерии', 'd.criteria.p': 'Въведете ключова дума или изберете жанр, актьор, режисьор, рейтинг или години и натиснете „Търси“.',
-    'd.found': 'Намерени: {n}', 'd.owned': '{n} вече в списъците', 'd.addAll': 'Добави всички нови за гледане',
+    'd.found': 'Намерени: {n}', 'd.addAll': 'Добави всички нови за гледане',
     'd.noResults.p': 'Разширете критериите — по-нисък рейтинг, повече жанрове или по-широк период.', 'd.more': 'Зареди още',
 
     'add.h': 'Добави филм или сериал', 'add.ph': 'Заглавие на английски или IMDb линк / ID (tt0111161)',
@@ -145,7 +145,7 @@ const I18N = {
     'd.loading': 'Searching and loading IMDb data...',
     'd.needTmdb.h': 'A TMDB key is needed', 'd.needTmdb.p': 'The list comes from TMDB, the details and ratings from IMDb. The key is free.', 'd.enterKey': 'Enter key',
     'd.criteria.h': 'Set your criteria', 'd.criteria.p': 'Type a keyword or pick a genre, actor, director, rating or years and press "Search".',
-    'd.found': 'Found: {n}', 'd.owned': '{n} already in your lists', 'd.addAll': 'Add all new ones to watch',
+    'd.found': 'Found: {n}', 'd.addAll': 'Add all new ones to watch',
     'd.noResults.p': 'Widen the criteria — lower rating, more genres or a wider period.', 'd.more': 'Load more',
 
     'add.h': 'Add a movie or series', 'add.ph': 'English title or IMDb link / ID (tt0111161)',
