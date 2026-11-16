@@ -11,6 +11,7 @@ const LS_SIDEBAR = 'cinelist.sidebarPinned';
 
 const LS_VIEWERS = 'cinelist.viewers';
 const LS_REC_HIDDEN = 'cinelist.recHidden';
+const LS_TASTE_OFF = 'cinelist.tasteOff';
 // ids of the first three are their original Bulgarian names, so existing marks keep working
 const DEFAULT_VIEWERS = [{ id: 'Мариана', name: 'Мариана', color: 0 }, { id: 'Ивайло', name: 'Ивайло', color: 1 }, { id: 'Семейно', name: 'Семейно', color: 2 }];
 const MAX_VIEWERS = 8;
@@ -137,6 +138,8 @@ const state = {
   recViewer: '',
   recType: '',
   recHidden: load(LS_REC_HIDDEN, []).filter(h => isId(h?.imdbID)),
+  tasteOff: load(LS_TASTE_OFF, []),
+  tasteEdit: false,
   recs: { items: [], loading: false, sig: '', error: '' }
 };
 const imdbMap = load(LS_IMDBMAP, {});
@@ -145,6 +148,8 @@ const recCache = new Map();
 // titles marked "Не ми харесва": full item snapshots, so the section can show them even when they are not in the list
 const hiddenRec = id => state.recHidden.some(h => h.imdbID === id);
 const setRecHidden = list => { state.recHidden = list; localStorage.setItem(LS_REC_HIDDEN, JSON.stringify(list)); };
+// taste entries the user removed from "Вашият вкус"; stored as "genre:Drama", "director:Name", "actor:Name"
+const setTasteOff = list => { state.tasteOff = list; localStorage.setItem(LS_TASTE_OFF, JSON.stringify(list)); };
 const viewersOf = it => Array.isArray(it.viewers) ? it.viewers : [];
 const isLiked = it => it.stars ? it.stars >= 3 : it.opinion === 'like';
 
@@ -323,6 +328,19 @@ async function handleAction(action, el) {
     case 'rec-restore':
       setRecHidden(state.recHidden.filter(h => h.imdbID !== id));
       closeModals();
+      return render();
+    case 'taste-edit':
+      state.tasteEdit = !state.tasteEdit;
+      return render();
+    case 'taste-off': {
+      const key = el.dataset.key;
+      if (!['genre', 'director', 'actor'].includes(key)) return;
+      const entry = key + ':' + el.dataset.value;
+      setTasteOff([...state.tasteOff.filter(x => x !== entry), entry]);
+      return render();
+    }
+    case 'taste-restore':
+      setTasteOff([]);
       return render();
 
     case 'filter': {
@@ -739,15 +757,15 @@ async function loadTrailer(id, it) {
 /* ---------- Recommendations ---------- */
 function buildProfile(viewer = state.recViewer) {
   const p = { genre: new Map(), director: new Map(), actors: new Map(), rated: 0 };
-  const add = (m, k, w) => m.set(k, (m.get(k) || 0) + w);
+  const add = (m, kind, k, w) => { if (!state.tasteOff.includes(kind + ':' + k)) m.set(k, (m.get(k) || 0) + w); };
   state.items.forEach(it => {
     if (!it.opinion) return;
     if (viewer && !viewersOf(it).includes(viewer)) return;
     const w = it.stars ? (it.stars - 2.5) / 1.5 : (it.opinion === 'like' ? 1 : -1);
     p.rated++;
-    it.genre.forEach(g => add(p.genre, g, w));
-    it.director.forEach(d => add(p.director, d, 2 * w));
-    it.actors.slice(0, 4).forEach(a => add(p.actors, a, 1.5 * w));
+    it.genre.forEach(g => add(p.genre, 'genre', g, w));
+    it.director.forEach(d => add(p.director, 'director', d, 2 * w));
+    it.actors.slice(0, 4).forEach(a => add(p.actors, 'actor', a, 1.5 * w));
   });
   return p;
 }
@@ -858,14 +876,19 @@ function renderRecommend() {
 
   const tg2 = topEntries(p.genre), td = topEntries(p.director, 5), ta = topEntries(p.actors, 6);
   const chips = (arr, key, fn = x => x) => arr.length
-    ? `<div class="chips">${arr.map(v => `<button class="chip" data-action="filter" data-key="${key}" data-value="${esc(v)}">${esc(fn(v))}</button>`).join('')}</div>`
+    ? `<div class="chips">${arr.map(v => state.tasteEdit
+      ? `<button class="chip" data-action="taste-off" data-key="${key}" data-value="${esc(v)}">${esc(fn(v))} ×</button>`
+      : `<button class="chip" data-action="filter" data-key="${key}" data-value="${esc(v)}">${esc(fn(v))}</button>`).join('')}</div>`
     : `<span class="muted small">${t('rec.noData')}</span>`;
 
   let html = `<div class="rec-for"><span class="muted">${t('rec.for')}</span>${['', ...viewerIds()].map(v =>
     `<button class="chip toggle ${state.recViewer === v ? 'on' : ''}" data-action="rec-viewer" data-value="${esc(v)}">${v ? esc(viewerName(v)) : t('rec.everyone')}</button>`).join('')}
     <span class="muted rec-sep">${t('rec.show')}</span>${[['', t('type.both')], ['movie', t('rec.movies')], ['series', t('rec.series')]].map(([v, label]) =>
     `<button class="chip toggle ${state.recType === v ? 'on' : ''}" data-action="rec-type" data-value="${v}">${label}</button>`).join('')}</div>`;
-  html += `<div class="section-title"><h2>${t('rec.taste')}</h2></div>`;
+  html += `<div class="section-title"><h2>${t('rec.taste')}</h2>
+    ${p.rated ? `<button class="btn ghost sm" data-action="taste-edit">${state.tasteEdit ? t('taste.done') : t('taste.edit')}</button>` : ''}
+    ${state.tasteEdit ? `<span class="muted small">${t('taste.hint')}</span>` : ''}
+    ${state.tasteOff.length ? `<button class="btn ghost sm" data-action="taste-restore">${t('taste.restore', { n: state.tasteOff.length })}</button>` : ''}</div>`;
   html += p.rated
     ? `<div class="panel taste">
         <div><h4>${t('rec.genres')}</h4>${chips(tg2, 'genre', tg)}</div>

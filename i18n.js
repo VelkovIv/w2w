@@ -87,7 +87,7 @@ const I18N = {
 
     'reason.dir': 'Реж. {name}', 'reason.top': 'Топ рейтинг', 'reason.like': 'Като „{title}“',
     'rec.for': 'Препоръки за:', 'rec.everyone': 'Всички', 'rec.show': 'Покажи:', 'rec.hide': 'Не ми харесва', 'rec.restore': 'Върни в препоръките', 'rec.movies': 'Филми', 'rec.series': 'Сериали',
-    'rec.taste': 'Вашият вкус', 'rec.genres': 'Любими жанрове', 'rec.directors': 'Любими режисьори', 'rec.actors': 'Любими актьори', 'rec.noData': 'Още няма данни',
+    'rec.taste': 'Вашият вкус', 'taste.edit': 'Редактирай', 'taste.done': 'Готово', 'taste.restore': 'Върни всички ({n})', 'taste.hint': 'Натиснете × до елемент, за да го махнете от вкуса ви.', 'rec.genres': 'Любими жанрове', 'rec.directors': 'Любими режисьори', 'rec.actors': 'Любими актьори', 'rec.noData': 'Още няма данни',
     'rec.rateHint': 'Оценете гледаните заглавия със звезди (★ до ★★★★★), за да станат препоръките лични. Дотогава подреждаме по рейтинг в IMDb.',
     'rec.because': 'Защото харесахте…', 'rec.needTmdb': 'Добавете TMDB ключ в Настройки, за да получавате заглавия, подобни на харесаните.',
     'rec.noLikedFor': 'Няма заглавия с ★★★ и повече, гледани от „{name}“.', 'rec.noLiked': 'Няма заглавия с ★★★ и повече.',
@@ -197,7 +197,7 @@ const I18N = {
 
     'reason.dir': 'Dir. {name}', 'reason.top': 'Top rated', 'reason.like': 'Like "{title}"',
     'rec.for': 'Recommendations for:', 'rec.everyone': 'Everyone', 'rec.show': 'Show:', 'rec.hide': 'Not for me', 'rec.restore': 'Back to recommendations', 'rec.movies': 'Movies', 'rec.series': 'Series',
-    'rec.taste': 'Your taste', 'rec.genres': 'Favourite genres', 'rec.directors': 'Favourite directors', 'rec.actors': 'Favourite actors', 'rec.noData': 'No data yet',
+    'rec.taste': 'Your taste', 'taste.edit': 'Edit', 'taste.done': 'Done', 'taste.restore': 'Restore all ({n})', 'taste.hint': 'Click × next to an item to remove it from your taste.', 'rec.genres': 'Favourite genres', 'rec.directors': 'Favourite directors', 'rec.actors': 'Favourite actors', 'rec.noData': 'No data yet',
     'rec.rateHint': 'Rate titles with stars (★ to ★★★★★) to make recommendations personal. Until then they are sorted by IMDb rating.',
     'rec.because': 'Because you liked…', 'rec.needTmdb': 'Add a TMDB key in Settings to get titles similar to the ones you liked.',
     'rec.noLikedFor': 'No titles rated ★★★ or higher watched by "{name}".', 'rec.noLiked': 'No titles rated ★★★ or higher.',
