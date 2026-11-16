@@ -881,11 +881,11 @@ function renderRecommend() {
       : `<button class="chip" data-action="filter" data-key="${key}" data-value="${esc(v)}">${esc(fn(v))}</button>`).join('')}</div>`
     : `<span class="muted small">${t('rec.noData')}</span>`;
 
-  let html = `<div class="rec-top"><button class="btn primary sm" data-action="discover-taste">${t('rec.findTaste')}</button></div>
-    <div class="rec-for"><span class="muted">${t('rec.for')}</span>${['', ...viewerIds()].map(v =>
+  let html = `<div class="rec-for"><span class="muted">${t('rec.for')}</span>${['', ...viewerIds()].map(v =>
     `<button class="chip toggle ${state.recViewer === v ? 'on' : ''}" data-action="rec-viewer" data-value="${esc(v)}">${v ? esc(viewerName(v)) : t('rec.everyone')}</button>`).join('')}
     <span class="muted rec-sep">${t('rec.show')}</span>${[['', t('type.both')], ['movie', t('rec.movies')], ['series', t('rec.series')]].map(([v, label]) =>
-    `<button class="chip toggle ${state.recType === v ? 'on' : ''}" data-action="rec-type" data-value="${v}">${label}</button>`).join('')}</div>`;
+    `<button class="chip toggle ${state.recType === v ? 'on' : ''}" data-action="rec-type" data-value="${v}">${label}</button>`).join('')}
+    <button class="btn primary sm rec-find" data-action="discover-taste">${t('rec.findTaste')}</button></div>`;
   html += `<div class="section-title"><h2>${t('rec.taste')}</h2>
     ${p.rated ? `<button class="btn ghost sm" data-action="taste-edit">${state.tasteEdit ? t('taste.done') : t('taste.edit')}</button>` : ''}
     ${state.tasteEdit ? `<span class="muted small">${t('taste.hint')}</span>` : ''}
