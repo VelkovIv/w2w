@@ -6,7 +6,7 @@ let LANG = localStorage.getItem(LS_LANG) === 'en' ? 'en' : 'bg';
 
 const I18N = {
   bg: {
-    'nav.towatch': 'За гледане', 'nav.watched': 'Гледани', 'nav.discover': 'Открий', 'nav.recommend': 'Препоръки', 'nav.settings': 'Настройки',
+    'nav.towatch': 'За гледане', 'nav.watched': 'Гледани', 'nav.discover': 'Открий', 'nav.recommend': 'Препоръки', 'nav.disliked': 'Не ми харесва','nav.settings': 'Настройки',
     'brand.pin': 'Закачи менюто да остава отворено',
     'filters': 'Филтри', 'addTitle': 'Добави заглавие', 'clear': 'Изчисти', 'close': 'Затвори', 'save': 'Запази', 'search': 'Търси',
     'loading': 'Зареждане...', 'refresh': 'Обнови',
@@ -15,6 +15,8 @@ const I18N = {
     'view.watched': 'Гледани', 'view.watched.sub': 'Завършени заглавия — оценете от ★ до ★★★★★ (★★★ и повече = харесано)',
     'view.discover': 'Открий', 'view.discover.sub': 'Задайте критерии — заглавията се свалят автоматично с данни и рейтинг от IMDb',
     'view.recommend': 'Препоръки', 'view.recommend.sub': 'Подбрани според вашия вкус и рейтинга в IMDb',
+    'view.disliked': 'Не ми харесва', 'view.disliked.sub': 'Скрити от препоръките заглавия. Върнете ги, когато искате.',
+    'dislike.empty.h': 'Няма скрити заглавия', 'dislike.empty.p': 'Бутонът „Не ми харесва“ в информацията за заглавие го скрива от препоръките.',
 
     'f.search': 'Търси по заглавие, актьор, режисьор, жанр...', 'f.actor': 'Актьор', 'f.director': 'Режисьор', 'f.allGenres': 'Всички жанрове',
     'type.both': 'Филми и сериали', 'type.movies': 'Само филми', 'type.series': 'Само сериали',
@@ -84,7 +86,7 @@ const I18N = {
     'detail.trailer': 'Трейлър', 'detail.trailerSearch': 'Търси трейлър в YouTube ↗',
 
     'reason.dir': 'Реж. {name}', 'reason.top': 'Топ рейтинг', 'reason.like': 'Като „{title}“',
-    'rec.for': 'Препоръки за:', 'rec.everyone': 'Всички', 'rec.show': 'Покажи:', 'rec.hide': 'Не ми харесва', 'rec.restore': 'Върни в препоръките', 'rec.hiddenSec': 'Не ми харесва','rec.movies': 'Филми', 'rec.series': 'Сериали',
+    'rec.for': 'Препоръки за:', 'rec.everyone': 'Всички', 'rec.show': 'Покажи:', 'rec.hide': 'Не ми харесва', 'rec.restore': 'Върни в препоръките', 'rec.movies': 'Филми', 'rec.series': 'Сериали',
     'rec.taste': 'Вашият вкус', 'rec.genres': 'Любими жанрове', 'rec.directors': 'Любими режисьори', 'rec.actors': 'Любими актьори', 'rec.noData': 'Още няма данни',
     'rec.rateHint': 'Оценете гледаните заглавия със звезди (★ до ★★★★★), за да станат препоръките лични. Дотогава подреждаме по рейтинг в IMDb.',
     'rec.because': 'Защото харесахте…', 'rec.needTmdb': 'Добавете TMDB ключ в Настройки, за да получавате заглавия, подобни на харесаните.',
@@ -114,7 +116,7 @@ const I18N = {
   },
 
   en: {
-    'nav.towatch': 'To watch', 'nav.watched': 'Watched', 'nav.discover': 'Discover', 'nav.recommend': 'For you', 'nav.settings': 'Settings',
+    'nav.towatch': 'To watch', 'nav.watched': 'Watched', 'nav.discover': 'Discover', 'nav.recommend': 'For you', 'nav.disliked': 'Not for me','nav.settings': 'Settings',
     'brand.pin': 'Keep the menu open',
     'filters': 'Filters', 'addTitle': 'Add title', 'clear': 'Clear', 'close': 'Close', 'save': 'Save', 'search': 'Search',
     'loading': 'Loading...', 'refresh': 'Refresh',
@@ -123,6 +125,8 @@ const I18N = {
     'view.watched': 'Watched', 'view.watched.sub': 'Finished titles — rate from ★ to ★★★★★ (★★★ and up = liked)',
     'view.discover': 'Discover', 'view.discover.sub': 'Set your criteria — titles are fetched automatically with IMDb data and ratings',
     'view.recommend': 'For you', 'view.recommend.sub': 'Picked for your taste and the IMDb rating',
+    'view.disliked': 'Not for me', 'view.disliked.sub': 'Titles hidden from recommendations. Bring them back any time.',
+    'dislike.empty.h': 'No hidden titles', 'dislike.empty.p': 'The "Not for me" button in a title\'s details hides it from recommendations.',
 
     'f.search': 'Search by title, actor, director, genre...', 'f.actor': 'Actor', 'f.director': 'Director', 'f.allGenres': 'All genres',
     'type.both': 'Movies & series', 'type.movies': 'Movies only', 'type.series': 'Series only',
@@ -192,7 +196,7 @@ const I18N = {
     'detail.trailer': 'Trailer', 'detail.trailerSearch': 'Search for a trailer on YouTube ↗',
 
     'reason.dir': 'Dir. {name}', 'reason.top': 'Top rated', 'reason.like': 'Like "{title}"',
-    'rec.for': 'Recommendations for:', 'rec.everyone': 'Everyone', 'rec.show': 'Show:', 'rec.hide': 'Not for me', 'rec.restore': 'Back to recommendations', 'rec.hiddenSec': 'Not for me','rec.movies': 'Movies', 'rec.series': 'Series',
+    'rec.for': 'Recommendations for:', 'rec.everyone': 'Everyone', 'rec.show': 'Show:', 'rec.hide': 'Not for me', 'rec.restore': 'Back to recommendations', 'rec.movies': 'Movies', 'rec.series': 'Series',
     'rec.taste': 'Your taste', 'rec.genres': 'Favourite genres', 'rec.directors': 'Favourite directors', 'rec.actors': 'Favourite actors', 'rec.noData': 'No data yet',
     'rec.rateHint': 'Rate titles with stars (★ to ★★★★★) to make recommendations personal. Until then they are sorted by IMDb rating.',
     'rec.because': 'Because you liked…', 'rec.needTmdb': 'Add a TMDB key in Settings to get titles similar to the ones you liked.',

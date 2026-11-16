@@ -49,7 +49,7 @@
 - **Because you liked…** — titles similar to the ones rated ★★★+, ordered by your taste.
 - **Watch next** — your watch list ordered by the genres, directors and actors you like.
 - Filter by viewer and separate **Movies** and **Series** sections.
-- The **Not for me** button (on a card or in the title details) hides the title from recommendations. Hidden titles are in the **Not for me** section under Recommendations, where you can bring them back. The hidden list is kept on this device only.
+- The **Not for me** button (on a card or in the title details) hides the title from recommendations. Hidden titles are in the **Not for me** menu item, where you can bring them back. The hidden list is kept on this device only.
 
 ### Everywhere
 - Works on desktop and phone; installs as an app (PWA).

@@ -327,7 +327,7 @@ async function handleAction(action, el) {
 
     case 'filter': {
       closeModals();
-      if (state.view === 'recommend' || state.view === 'discover') state.view = 'towatch';
+      if (state.view === 'recommend' || state.view === 'discover' || state.view === 'disliked') state.view = 'towatch';
       state.f = { ...defaultFilters(), sort: state.f.sort, [el.dataset.key]: el.dataset.value };
       syncFilterInputs();
       return render();
@@ -526,9 +526,9 @@ function render() {
   $('#view-title').textContent = t('view.' + state.view);
   $('#view-sub').textContent = t('view.' + state.view + '.sub');
   $$('.nav-btn[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === state.view));
-  $('#filters').hidden = state.view === 'recommend' || state.view === 'discover';
+  $('#filters').hidden = state.view === 'recommend' || state.view === 'discover' || state.view === 'disliked';
   $('#discover-panel').hidden = state.view !== 'discover';
-  $('.sticky-head').classList.toggle('no-filters', state.view === 'recommend');
+  $('.sticky-head').classList.toggle('no-filters', state.view === 'recommend' || state.view === 'disliked');
   updateFilterDot();
   $('#f-opinion').hidden = state.view !== 'watched';
   $('#f-viewer').hidden = state.view !== 'watched';
@@ -536,6 +536,7 @@ function render() {
   renderStats();
   if (state.view === 'recommend') renderRecommend();
   else if (state.view === 'discover') renderDiscover();
+  else if (state.view === 'disliked') renderDisliked();
   else { populateFilterOptions(); renderList(); }
   fadedView = state.view;
 }
@@ -899,9 +900,14 @@ function renderRecommend() {
     : candidates.length ? byType(candidates, 8, x => card(x.it, { discover: true, hideable: true, reasons: x.reasons }), t('rec.noneKind'))
     : `<div class="panel muted">${t('rec.seedHint')}</div>`;
 
-  if (state.recHidden.length) html += `<div class="section-title"><h2>${t('rec.hiddenSec')}</h2><span class="muted small">${state.recHidden.length}</span></div>
-    ${gridOpen()}${state.recHidden.map(it => card(it, { restorable: true })).join('')}</div>`;
   c.innerHTML = html;
+}
+
+// titles marked "Не ми харесва"; each card brings its title back to Recommendations
+function renderDisliked() {
+  $('#content').innerHTML = state.recHidden.length
+    ? `${gridOpen()}${state.recHidden.map(it => card(it, { restorable: true })).join('')}</div>`
+    : emptyState(t('dislike.empty.h'), t('dislike.empty.p'), false);
 }
 
 async function loadDiscover() {
