@@ -421,9 +421,8 @@ button.chip:hover { border-color: var(--accent); color: var(--text); }
   background: var(--accent-2); box-shadow: 0 0 0 2px var(--bg);
 }
 
-/* Compact header while scrolling */
-.sticky-head, .sticky-head .topbar, .sticky-head .filters { transition: padding .2s ease, margin .2s ease; }
-.topbar h1 { transition: font-size .2s ease; }
+/* Compact header while scrolling: no transition, so the page height doesn't keep changing under the scroll */
+html { overflow-anchor: none; }
 .sticky-head.compact { padding-top: 10px; padding-bottom: 10px; box-shadow: 0 10px 30px -15px rgba(0, 0, 0, .8); }
 .sticky-head.compact .topbar { margin-bottom: 10px; align-items: center; }
 .sticky-head.compact .topbar h1 { font-size: 1.2rem; }

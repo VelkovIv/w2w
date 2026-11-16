@@ -1556,10 +1556,10 @@ window.addEventListener('scroll', () => {
   requestAnimationFrame(() => {
     const head = $('.sticky-head');
     const y = window.scrollY;
-    // hysteresis + min page length avoid flicker when the header shrinks
+    // a wide band between the two thresholds keeps the header from toggling back and forth
     const scrollable = document.documentElement.scrollHeight - window.innerHeight > 300;
-    if (y > 80 && scrollable) head.classList.add('compact');
-    else if (y < 10) {
+    if (y > 120 && scrollable) head.classList.add('compact');
+    else if (y < 40) {
       head.classList.remove('compact');
       // on phones the funnel controls the panel, so keep it as the user left it
       if (!isMobile.matches) head.classList.remove('expanded');
