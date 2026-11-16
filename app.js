@@ -5,6 +5,7 @@ const LS_KEY = 'cinelist.apikey';
 const LS_DISCOVER = 'cinelist.discover';
 const LS_TMDB = 'cinelist.tmdbkey';
 const LS_CRITERIA = 'cinelist.criteria';
+const LS_MIN_DEFAULT = 'cinelist.minDefault6';
 const LS_IMDBMAP = 'cinelist.imdbmap';
 const LS_TMDBMAP = 'cinelist.tmdbmap';
 const LS_SIDEBAR = 'cinelist.sidebarPinned';
@@ -118,11 +119,17 @@ const popular = i => votesNum(i) >= MIN_VOTES;
 // errors that make further requests pointless (missing/invalid key, daily limit)
 const fail = (msg, fatal = false) => Object.assign(new Error(msg), { fatal });
 
-const defaultFilters = () => ({ q: '', actor: '', director: '', genre: '', type: '', progress: '', opinion: '', viewer: '', minRating: 0, sort: 'added' });
+const defaultFilters = () => ({ q: '', actor: '', director: '', genre: '', type: '', progress: '', opinion: '', viewer: '', minRating: 6, sort: 'added' });
 const defaultCriteria = () => ({ type: 'both', keyword: '', studio: '', genres: [], actor: '', director: '', minRating: 6, yearFrom: '', yearTo: '', lang: '', sort: 'popularity' });
 
 function loadCriteria() {
   const c = { ...defaultCriteria(), ...load(LS_CRITERIA, {}) };
+  // the saved IMDb minimum from before the default moved to 6; apply the new default once
+  if (!localStorage.getItem(LS_MIN_DEFAULT)) {
+    c.minRating = defaultCriteria().minRating;
+    localStorage.setItem(LS_MIN_DEFAULT, '1');
+    localStorage.setItem(LS_CRITERIA, JSON.stringify(c));
+  }
   c.genres = Array.isArray(c.genres) ? c.genres.filter(g => GENRE_IDS[g]) : [];
   return c;
 }
