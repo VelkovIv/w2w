@@ -314,6 +314,7 @@ async function handleAction(action, el) {
       if (!isId(id)) return;
       state.recHidden = [...new Set([...state.recHidden, id])];
       localStorage.setItem(LS_REC_HIDDEN, JSON.stringify(state.recHidden));
+      closeModals();
       return render();
     case 'rec-unhide':
       state.recHidden = [];
@@ -660,6 +661,8 @@ function openDetail(id) {
        <button class="btn danger-ghost" data-action="remove" data-id="${eid}" title="${t('btn.delete')}">${ICON.trash}</button>`
     : `<button class="btn primary" data-action="add" data-id="${eid}">${ICON.plus} ${t('btn.toWatch')}</button>
        <button class="btn ghost" data-action="add-watched" data-id="${eid}">${t('btn.watchedIt')}</button>`;
+  // hiding only matters on the Recommendations screen, so offer it only when opened from there
+  const hideBtn = state.view === 'recommend' && isId(id) ? `<button class="btn ghost" data-action="rec-hide" data-id="${eid}">${ICON.hide} ${t('rec.hide')}</button>` : '';
 
   $('#detail-body').innerHTML = `
     <div class="detail">
@@ -679,7 +682,7 @@ function openDetail(id) {
         ${inList ? `<div class="my-rating"><span class="muted">${t('detail.myRating')}</span>${starsHtml(it, 'lg')}</div>${seasonHtml(it)}
           <label class="comment-box"><span class="muted">${t('detail.comment')}</span>
             <textarea id="comment-input" data-id="${eid}" maxlength="1000" rows="3" placeholder="${t('detail.commentPh')}">${esc(it.comment || '')}</textarea></label>` : ''}
-        <div class="detail-actions">${actions}</div>
+        <div class="detail-actions">${actions}${hideBtn}</div>
         ${isId(id) ? `<a href="https://www.imdb.com/title/${eid}/" target="_blank" rel="noopener noreferrer">${t('detail.imdb')}</a>` : ''}
       </div>
     </div>`;
