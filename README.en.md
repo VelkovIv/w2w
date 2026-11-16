@@ -42,14 +42,14 @@
 - **Discover** — titles are fetched automatically by criteria:
   keyword / franchise (e.g. *Star Wars*), genre, actor, director, **studio or platform** (Apple TV+, Disney+, Netflix, HBO…), minimum IMDb rating, years, language.
 - Titles already in your lists are shown with a label of their category.
-- **Discover** and **Recommendations** only show titles with **over 50,000 IMDb votes**.
+- **Discover** and **Recommendations** only show titles with **over 50,000 IMDb votes**. Discover does not show titles you have already watched.
 - Filters and sorting by actor, director, genre, rating, type, my rating and viewer.
 
 ### Recommendations
 - **Because you liked…** — titles similar to the ones rated ★★★+, ordered by your taste.
 - **Watch next** — your watch list ordered by the genres, directors and actors you like.
 - Filter by viewer and separate **Movies** and **Series** sections.
-- The **×** button on a card hides the title from recommendations; hidden titles come back with **Show hidden**. The hidden list is kept on this device only.
+- The **Not for me** button (on a card or in the title details) hides the title from recommendations. Hidden titles are in the **Not for me** section under Recommendations, where you can bring them back. The hidden list is kept on this device only.
 
 ### Everywhere
 - Works on desktop and phone; installs as an app (PWA).

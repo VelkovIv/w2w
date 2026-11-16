@@ -136,12 +136,15 @@ const state = {
   disc: { criteria: loadCriteria(), results: [], page: 0, more: false, loading: false, tvList: null, error: '' },
   recViewer: '',
   recType: '',
-  recHidden: load(LS_REC_HIDDEN, []),
+  recHidden: load(LS_REC_HIDDEN, []).filter(h => isId(h?.imdbID)),
   recs: { items: [], loading: false, sig: '', error: '' }
 };
 const imdbMap = load(LS_IMDBMAP, {});
 const tmdbFromImdb = load(LS_TMDBMAP, {});
 const recCache = new Map();
+// titles marked "Не ми харесва": full item snapshots, so the section can show them even when they are not in the list
+const hiddenRec = id => state.recHidden.some(h => h.imdbID === id);
+const setRecHidden = list => { state.recHidden = list; localStorage.setItem(LS_REC_HIDDEN, JSON.stringify(list)); };
 const viewersOf = it => Array.isArray(it.viewers) ? it.viewers : [];
 const isLiked = it => it.stars ? it.stars >= 3 : it.opinion === 'like';
 
@@ -310,15 +313,16 @@ async function handleAction(action, el) {
     case 'rec-type':
       state.recType = ['movie', 'series'].includes(el.dataset.value) ? el.dataset.value : '';
       return render();
-    case 'rec-hide':
-      if (!isId(id)) return;
-      state.recHidden = [...new Set([...state.recHidden, id])];
-      localStorage.setItem(LS_REC_HIDDEN, JSON.stringify(state.recHidden));
+    case 'rec-hide': {
+      const item = byId(id) || state.discover[id] || state.recs.items.find(x => x.it.imdbID === id)?.it;
+      if (!isId(id) || !item) return;
+      setRecHidden([...state.recHidden.filter(h => h.imdbID !== id), item]);
       closeModals();
       return render();
-    case 'rec-unhide':
-      state.recHidden = [];
-      localStorage.removeItem(LS_REC_HIDDEN);
+    }
+    case 'rec-restore':
+      setRecHidden(state.recHidden.filter(h => h.imdbID !== id));
+      closeModals();
       return render();
 
     case 'filter': {
@@ -603,7 +607,7 @@ function posterHtml(it) {
     : `<div class="noposter">${esc(it.title.charAt(0))}</div>`;
 }
 
-function card(it, { discover = false, reasons = [], hideable = false } = {}) {
+function card(it, { discover = false, reasons = [], hideable = false, restorable = false } = {}) {
   const own = discover ? byId(it.imdbID) : null;
   if (own) it = own;
   const id = esc(it.imdbID);
@@ -616,7 +620,8 @@ function card(it, { discover = false, reasons = [], hideable = false } = {}) {
     : it.watching ? `<span class="badge progress">${t('badge.watching')}</span>`
     : it.newSeason ? `<span class="badge progress new">${t('badge.new')}</span>` : '';
 
-  const actions = own ? statusTag(own)
+  const actions = restorable ? `<button class="btn ghost sm" data-action="rec-restore" data-id="${id}">${ICON.undo} ${t('rec.restore')}</button>`
+    : own ? statusTag(own)
     : discover
     ? `<button class="btn sm primary" data-action="add" data-id="${id}">${ICON.plus} ${t('btn.toWatch')}</button>
        <button class="btn sm ghost" data-action="add-watched" data-id="${id}">${t('btn.watchedIt')}</button>`
@@ -661,8 +666,10 @@ function openDetail(id) {
        <button class="btn danger-ghost" data-action="remove" data-id="${eid}" title="${t('btn.delete')}">${ICON.trash}</button>`
     : `<button class="btn primary" data-action="add" data-id="${eid}">${ICON.plus} ${t('btn.toWatch')}</button>
        <button class="btn ghost" data-action="add-watched" data-id="${eid}">${t('btn.watchedIt')}</button>`;
-  // hiding only matters on the Recommendations screen, so offer it only when opened from there
-  const hideBtn = state.view === 'recommend' && isId(id) ? `<button class="btn ghost" data-action="rec-hide" data-id="${eid}">${ICON.hide} ${t('rec.hide')}</button>` : '';
+  // "Не ми харесва" is offered on every title; once hidden, the same place brings it back
+  const hideBtn = !isId(id) ? '' : hiddenRec(id)
+    ? `<button class="btn ghost" data-action="rec-restore" data-id="${eid}">${ICON.undo} ${t('rec.restore')}</button>`
+    : `<button class="btn ghost" data-action="rec-hide" data-id="${eid}">${ICON.hide} ${t('rec.hide')}</button>`;
 
   $('#detail-body').innerHTML = `
     <div class="detail">
@@ -836,8 +843,8 @@ function renderRecommend() {
 
   // a viewer sees titles marked for them or not assigned to anyone yet
   const viewerOk = it => !state.recViewer || !viewersOf(it).length || viewersOf(it).includes(state.recViewer);
-  const watchlist = state.items.filter(i => i.status === 'towatch' && viewerOk(i) && !state.recHidden.includes(i.imdbID)).map(i => scoreItem(i, p)).sort((a, b) => b.s - a.s);
-  const candidates = SEED.filter(id => state.discover[id] && !byId(id) && popular(state.discover[id]) && !state.recHidden.includes(id)).map(id => scoreItem(state.discover[id], p)).sort((a, b) => b.s - a.s);
+  const watchlist = state.items.filter(i => i.status === 'towatch' && viewerOk(i) && !hiddenRec(i.imdbID)).map(i => scoreItem(i, p)).sort((a, b) => b.s - a.s);
+  const candidates = SEED.filter(id => state.discover[id] && !byId(id) && popular(state.discover[id]) && !hiddenRec(id)).map(id => scoreItem(state.discover[id], p)).sort((a, b) => b.s - a.s);
   const missing = SEED.some(id => !state.discover[id] && !byId(id));
 
   const byType = (entries, limit, toCard, emptyText) => [['movie', t('rec.movies')], ['series', t('rec.series')]]
@@ -856,8 +863,7 @@ function renderRecommend() {
   let html = `<div class="rec-for"><span class="muted">${t('rec.for')}</span>${['', ...viewerIds()].map(v =>
     `<button class="chip toggle ${state.recViewer === v ? 'on' : ''}" data-action="rec-viewer" data-value="${esc(v)}">${v ? esc(viewerName(v)) : t('rec.everyone')}</button>`).join('')}
     <span class="muted rec-sep">${t('rec.show')}</span>${[['', t('type.both')], ['movie', t('rec.movies')], ['series', t('rec.series')]].map(([v, label]) =>
-    `<button class="chip toggle ${state.recType === v ? 'on' : ''}" data-action="rec-type" data-value="${v}">${label}</button>`).join('')}${state.recHidden.length
-    ? `<button class="chip" data-action="rec-unhide">${t('rec.unhide', { n: state.recHidden.length })}</button>` : ''}</div>`;
+    `<button class="chip toggle ${state.recType === v ? 'on' : ''}" data-action="rec-type" data-value="${v}">${label}</button>`).join('')}</div>`;
   html += `<div class="section-title"><h2>${t('rec.taste')}</h2></div>`;
   html += p.rated
     ? `<div class="panel taste">
@@ -874,7 +880,7 @@ function renderRecommend() {
   } else if (!liked.length) {
     html += `<div class="panel muted">${state.recViewer ? esc(t('rec.noLikedFor', { name: viewerName(state.recViewer) })) : t('rec.noLiked')} ${t('rec.onlyLiked')}</div>`;
   } else {
-    const recs = r.items.filter(x => !byId(x.it.imdbID) && !state.recHidden.includes(x.it.imdbID));
+    const recs = r.items.filter(x => !byId(x.it.imdbID) && !hiddenRec(x.it.imdbID));
     if (recs.length || !r.loading) html += byType(recs, 12, x => card(x.it, { discover: true, hideable: true, reasons: x.because.slice(0, 2).map(title => t('reason.like', { title })) }),
       r.loading ? t('loading') : t('rec.noneType'));
     if (r.loading) html += '<div class="loader"></div>';
@@ -893,6 +899,8 @@ function renderRecommend() {
     : candidates.length ? byType(candidates, 8, x => card(x.it, { discover: true, hideable: true, reasons: x.reasons }), t('rec.noneKind'))
     : `<div class="panel muted">${t('rec.seedHint')}</div>`;
 
+  if (state.recHidden.length) html += `<div class="section-title"><h2>${t('rec.hiddenSec')}</h2><span class="muted small">${state.recHidden.length}</span></div>
+    ${gridOpen()}${state.recHidden.map(it => card(it, { restorable: true })).join('')}</div>`;
   c.innerHTML = html;
 }
 
@@ -1156,7 +1164,7 @@ function renderDiscover() {
     newest: (a, b) => yearNum(b.year) - yearNum(a.year),
     popularity: (a, b) => votesNum(b) - votesNum(a)
   }[d.criteria.sort];
-  const list = [...d.results];
+  const list = [...d.results].filter(i => byId(i.imdbID)?.status !== 'watched');
   if (sorter) list.sort(sorter);
   const owned = list.filter(i => byId(i.imdbID)).length;
   let html = list.length
