@@ -570,8 +570,10 @@ function render() {
 function renderStats() {
   const towatch = state.items.filter(i => i.status === 'towatch').length;
   const watched = state.items.filter(i => i.status === 'watched');
-  const liked = state.items.filter(i => i.opinion === 'like').length;
-  const disliked = state.items.filter(i => i.opinion === 'dislike').length;
+  // "Не ми харесва" titles count as disliked even when they are not in the list
+  const hiddenIds = new Set(state.recHidden.map(h => h.imdbID));
+  const liked = state.items.filter(i => i.opinion === 'like' && !hiddenIds.has(i.imdbID)).length;
+  const disliked = new Set([...state.items.filter(i => i.opinion === 'dislike').map(i => i.imdbID), ...hiddenIds]).size;
   $('#count-towatch').textContent = towatch;
   $('#count-watched').textContent = watched.length;
   const pct = liked + disliked ? Math.round(liked / (liked + disliked) * 100) : 0;
