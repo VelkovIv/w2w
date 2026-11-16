@@ -252,7 +252,7 @@ function mapDetails(d) {
 
 async function addTitle(id, status = 'towatch') {
   if (byId(id)) { toast(t('toast.already'), 'warn'); return; }
-  const details = state.discover[id] || mapDetails(await omdb({ i: id, plot: 'full' }));
+  const details = state.discover[id] || state.disc.results.find(x => x.imdbID === id) || mapDetails(await omdb({ i: id, plot: 'full' }));
   const item = {
     ...details, status, opinion: null, viewers: [], addedAt: Date.now(),
     watchedAt: status === 'watched' ? Date.now() : null,
@@ -363,10 +363,11 @@ async function handleAction(action, el) {
       if (!isId(id)) return;
       el.disabled = true;
       try {
+        await addTitle(id, action === 'add' ? 'towatch' : 'watched');
         const row = el.closest('.result-actions');
         if (row) row.innerHTML = statusTag(byId(id));
         else render(); // a Discover or Recommendations card leaves its list once it is in the lists
-        if (state.detailId === id) openDetail(id);
+        if (action === 'add-watched' || state.detailId === id) openDetail(id); // watched: open the details right away to rate it
       } catch (err) {
         toast(err.message, 'error');
         el.disabled = false;
