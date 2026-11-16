@@ -10,6 +10,7 @@ const LS_TMDBMAP = 'cinelist.tmdbmap';
 const LS_SIDEBAR = 'cinelist.sidebarPinned';
 
 const LS_VIEWERS = 'cinelist.viewers';
+const LS_REC_HIDDEN = 'cinelist.recHidden';
 // ids of the first three are their original Bulgarian names, so existing marks keep working
 const DEFAULT_VIEWERS = [{ id: 'Мариана', name: 'Мариана', color: 0 }, { id: 'Ивайло', name: 'Ивайло', color: 1 }, { id: 'Семейно', name: 'Семейно', color: 2 }];
 const MAX_VIEWERS = 8;
@@ -89,7 +90,8 @@ const ICON = {
   undo: svg('<path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>'),
   plus: svg('<path d="M12 5v14M5 12h14"/>'),
   play: svg('<path d="M7 4l13 8-13 8z"/>'),
-  pause: svg('<path d="M8 5v14M16 5v14"/>')
+  pause: svg('<path d="M8 5v14M16 5v14"/>'),
+  hide: svg('<path d="M18 6 6 18M6 6l12 12"/>')
 };
 
 const FLAGS = {
@@ -134,6 +136,7 @@ const state = {
   disc: { criteria: loadCriteria(), results: [], page: 0, more: false, loading: false, tvList: null, error: '' },
   recViewer: '',
   recType: '',
+  recHidden: load(LS_REC_HIDDEN, []),
   recs: { items: [], loading: false, sig: '', error: '' }
 };
 const imdbMap = load(LS_IMDBMAP, {});
@@ -306,6 +309,15 @@ async function handleAction(action, el) {
       return render();
     case 'rec-type':
       state.recType = ['movie', 'series'].includes(el.dataset.value) ? el.dataset.value : '';
+      return render();
+    case 'rec-hide':
+      if (!isId(id)) return;
+      state.recHidden = [...new Set([...state.recHidden, id])];
+      localStorage.setItem(LS_REC_HIDDEN, JSON.stringify(state.recHidden));
+      return render();
+    case 'rec-unhide':
+      state.recHidden = [];
+      localStorage.removeItem(LS_REC_HIDDEN);
       return render();
 
     case 'filter': {
@@ -590,7 +602,7 @@ function posterHtml(it) {
     : `<div class="noposter">${esc(it.title.charAt(0))}</div>`;
 }
 
-function card(it, { discover = false, reasons = [] } = {}) {
+function card(it, { discover = false, reasons = [], hideable = false } = {}) {
   const own = discover ? byId(it.imdbID) : null;
   if (own) it = own;
   const id = esc(it.imdbID);
@@ -626,7 +638,7 @@ function card(it, { discover = false, reasons = [] } = {}) {
       ${viewers}
       ${discover ? '' : seasonHtml(it) + starsHtml(it)}
       ${!discover && it.comment ? `<div class="comment-preview" title="${esc(it.comment)}">„${esc(it.comment)}“</div>` : ''}
-      <div class="actions">${actions}</div>
+      <div class="actions">${actions}${hideable ? `<button class="icon-btn" data-action="rec-hide" data-id="${id}" title="${t('rec.hide')}">${ICON.hide}</button>` : ''}</div>
     </div>
   </article>`;
 }
@@ -821,8 +833,8 @@ function renderRecommend() {
 
   // a viewer sees titles marked for them or not assigned to anyone yet
   const viewerOk = it => !state.recViewer || !viewersOf(it).length || viewersOf(it).includes(state.recViewer);
-  const watchlist = state.items.filter(i => i.status === 'towatch' && viewerOk(i)).map(i => scoreItem(i, p)).sort((a, b) => b.s - a.s);
-  const candidates = SEED.filter(id => state.discover[id] && !byId(id) && popular(state.discover[id])).map(id => scoreItem(state.discover[id], p)).sort((a, b) => b.s - a.s);
+  const watchlist = state.items.filter(i => i.status === 'towatch' && viewerOk(i) && !state.recHidden.includes(i.imdbID)).map(i => scoreItem(i, p)).sort((a, b) => b.s - a.s);
+  const candidates = SEED.filter(id => state.discover[id] && !byId(id) && popular(state.discover[id]) && !state.recHidden.includes(id)).map(id => scoreItem(state.discover[id], p)).sort((a, b) => b.s - a.s);
   const missing = SEED.some(id => !state.discover[id] && !byId(id));
 
   const byType = (entries, limit, toCard, emptyText) => [['movie', t('rec.movies')], ['series', t('rec.series')]]
@@ -841,7 +853,8 @@ function renderRecommend() {
   let html = `<div class="rec-for"><span class="muted">${t('rec.for')}</span>${['', ...viewerIds()].map(v =>
     `<button class="chip toggle ${state.recViewer === v ? 'on' : ''}" data-action="rec-viewer" data-value="${esc(v)}">${v ? esc(viewerName(v)) : t('rec.everyone')}</button>`).join('')}
     <span class="muted rec-sep">${t('rec.show')}</span>${[['', t('type.both')], ['movie', t('rec.movies')], ['series', t('rec.series')]].map(([v, label]) =>
-    `<button class="chip toggle ${state.recType === v ? 'on' : ''}" data-action="rec-type" data-value="${v}">${label}</button>`).join('')}</div>`;
+    `<button class="chip toggle ${state.recType === v ? 'on' : ''}" data-action="rec-type" data-value="${v}">${label}</button>`).join('')}${state.recHidden.length
+    ? `<button class="chip" data-action="rec-unhide">${t('rec.unhide', { n: state.recHidden.length })}</button>` : ''}</div>`;
   html += `<div class="section-title"><h2>${t('rec.taste')}</h2></div>`;
   html += p.rated
     ? `<div class="panel taste">
@@ -858,8 +871,8 @@ function renderRecommend() {
   } else if (!liked.length) {
     html += `<div class="panel muted">${state.recViewer ? esc(t('rec.noLikedFor', { name: viewerName(state.recViewer) })) : t('rec.noLiked')} ${t('rec.onlyLiked')}</div>`;
   } else {
-    const recs = r.items.filter(x => !byId(x.it.imdbID));
-    if (recs.length || !r.loading) html += byType(recs, 12, x => card(x.it, { discover: true, reasons: x.because.slice(0, 2).map(title => t('reason.like', { title })) }),
+    const recs = r.items.filter(x => !byId(x.it.imdbID) && !state.recHidden.includes(x.it.imdbID));
+    if (recs.length || !r.loading) html += byType(recs, 12, x => card(x.it, { discover: true, hideable: true, reasons: x.because.slice(0, 2).map(title => t('reason.like', { title })) }),
       r.loading ? t('loading') : t('rec.noneType'));
     if (r.loading) html += '<div class="loader"></div>';
     else if (r.error) html += `<p class="hint error">${esc(r.error)}</p>`;
@@ -867,14 +880,14 @@ function renderRecommend() {
 
   html += `<div class="section-title"><h2>${t('rec.next')}</h2><span class="muted small">${t('rec.fromList')}</span></div>`;
   html += watchlist.length
-    ? byType(watchlist, 10, x => card(x.it, { reasons: x.reasons }), t('rec.noneInList'))
+    ? byType(watchlist, 10, x => card(x.it, { reasons: x.reasons, hideable: true }), t('rec.noneInList'))
     : emptyState(t('rec.emptyList.h'), t('rec.emptyList.p'));
 
   html += `<div class="section-title"><h2>${t('rec.new')}</h2>
     ${p.rated ? `<button class="btn primary sm" data-action="discover-taste">${t('rec.findTaste')}</button>` : ''}
     ${missing ? `<button class="btn ghost sm" data-action="load-discover" ${state.loadingDiscover ? 'disabled' : ''}>${state.loadingDiscover ? t('loading') : t('rec.loadSeed')}</button>` : ''}</div>`;
   html += state.loadingDiscover && !candidates.length ? '<div class="loader"></div>'
-    : candidates.length ? byType(candidates, 8, x => card(x.it, { discover: true, reasons: x.reasons }), t('rec.noneKind'))
+    : candidates.length ? byType(candidates, 8, x => card(x.it, { discover: true, hideable: true, reasons: x.reasons }), t('rec.noneKind'))
     : `<div class="panel muted">${t('rec.seedHint')}</div>`;
 
   c.innerHTML = html;

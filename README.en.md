@@ -49,6 +49,7 @@
 - **Because you liked…** — titles similar to the ones rated ★★★+, ordered by your taste.
 - **Watch next** — your watch list ordered by the genres, directors and actors you like.
 - Filter by viewer and separate **Movies** and **Series** sections.
+- The **×** button on a card hides the title from recommendations; hidden titles come back with **Show hidden**. The hidden list is kept on this device only.
 
 ### Everywhere
 - Works on desktop and phone; installs as an app (PWA).
