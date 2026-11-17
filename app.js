@@ -156,6 +156,8 @@ const tmdbFromImdb = load(LS_TMDBMAP, {});
 const recCache = new Map();
 // titles marked "Не ми харесва": full item snapshots, so the section can show them even when they are not in the list
 const hiddenRec = id => state.recHidden.some(h => h.imdbID === id);
+// suggestions from the seed list that are not in the lists yet and not hidden
+const freshSeeds = () => SEED.filter(id => state.discover[id] && !byId(id) && popular(state.discover[id]) && !hiddenRec(id));
 const setRecHidden = list => { state.recHidden = list; localStorage.setItem(LS_REC_HIDDEN, JSON.stringify(list)); };
 // taste entries the user removed from "Вашият вкус"; stored as "genre:Drama", "director:Name", "actor:Name"
 const setTasteOff = list => { state.tasteOff = list; localStorage.setItem(LS_TASTE_OFF, JSON.stringify(list)); };
@@ -298,6 +300,14 @@ async function handleAction(action, el) {
     }
     case 'add-all': {
       const list = state.disc.results.filter(i => !byId(i.imdbID) && !hiddenRec(i.imdbID));
+      const now = Date.now();
+      list.forEach((it, idx) => state.items.unshift({ ...it, status: 'towatch', opinion: null, viewers: [], addedAt: now - idx, watchedAt: null }));
+      save();
+      render();
+      return toast(t('toast.addedMany', { n: list.length }));
+    }
+    case 'add-candidates': {
+      const list = freshSeeds().map(id => state.discover[id]);
       const now = Date.now();
       list.forEach((it, idx) => state.items.unshift({ ...it, status: 'towatch', opinion: null, viewers: [], addedAt: now - idx, watchedAt: null }));
       save();
@@ -624,6 +634,13 @@ function renderList() {
   } else if (!list.length) {
     c.innerHTML = `<div class="empty"><h3>${t('noResults.h')}</h3><p>${t('noResults.p')}</p>
       <button class="btn ghost" data-action="reset-filters">${t('clearFilters')}</button></div>`;
+  } else if (state.view === 'towatch') {
+    // movies and series in their own sections
+    c.innerHTML = ['movie', 'series'].map(ty => {
+      const part = list.filter(i => i.type === ty);
+      return part.length ? `<div class="subsection"><h3>${ty === 'movie' ? t('rec.movies') : t('rec.series')} <span class="muted small">${part.length}</span></h3>
+        ${gridOpen()}${part.map(i => card(i)).join('')}</div></div>` : '';
+    }).join('');
   } else {
     c.innerHTML = `${gridOpen()}${list.map(i => card(i)).join('')}</div>`;
   }
@@ -897,7 +914,7 @@ function renderRecommend() {
   // a viewer sees titles marked for them or not assigned to anyone yet
   const viewerOk = it => !state.recViewer || !viewersOf(it).length || viewersOf(it).includes(state.recViewer);
   const watchlist = state.items.filter(i => i.status === 'towatch' && viewerOk(i) && !hiddenRec(i.imdbID)).map(i => scoreItem(i, p)).sort((a, b) => b.s - a.s);
-  const candidates = SEED.filter(id => state.discover[id] && !byId(id) && popular(state.discover[id]) && !hiddenRec(id)).map(id => scoreItem(state.discover[id], p)).sort((a, b) => b.s - a.s);
+  const candidates = freshSeeds().map(id => scoreItem(state.discover[id], p)).sort((a, b) => b.s - a.s);
   const missing = SEED.some(id => !state.discover[id] && !byId(id));
 
   const byType = (entries, limit, toCard, emptyText) => [['movie', t('rec.movies')], ['series', t('rec.series')]]
@@ -962,6 +979,7 @@ function renderRecommend() {
     : emptyState(t('rec.emptyList.h'), t('rec.emptyList.p'));
 
   html += `<div class="section-title"><h2>${t('rec.new')}</h2>
+    ${candidates.length ? `<button class="btn primary sm" data-action="add-candidates">${ICON.plus} ${t('rec.addAll')}</button>` : ''}
     ${missing ? `<button class="btn ghost sm" data-action="load-discover" ${state.loadingDiscover ? 'disabled' : ''}>${state.loadingDiscover ? t('loading') : t('rec.loadSeed')}</button>` : ''}</div>`;
   html += state.loadingDiscover && !candidates.length ? '<div class="loader"></div>'
     : candidates.length ? byType(candidates, 8, x => card(x.it, { discover: true, hideable: true, reasons: x.reasons }), t('rec.noneKind'))

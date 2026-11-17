@@ -95,7 +95,7 @@ const I18N = {
     'rec.noneType': 'Няма предложения — оценете с ★★★ или повече заглавия от този вид.',
     'rec.next': 'Гледайте следващо', 'rec.fromList': 'от вашия списък', 'rec.noneInList': 'Няма заглавия от този вид в „За гледане“.',
     'rec.emptyList.h': 'Списъкът за гледане е празен', 'rec.emptyList.p': 'Добавете заглавия, за да получите препоръки.',
-    'rec.new': 'Открийте нещо ново', 'rec.findTaste': 'Намери нови по моя вкус', 'rec.loadSeed': 'Зареди предложения от IMDb',
+    'rec.new': 'Открийте нещо ново', 'rec.findTaste': 'Намери нови по моя вкус', 'rec.loadSeed': 'Зареди предложения от IMDb', 'rec.addAll': 'Добави всички за гледане',
     'rec.noneKind': 'Няма заглавия от този вид.', 'rec.seedHint': 'Натиснете „Зареди предложения“, за да получите топ заглавия от IMDb, подредени според вашия вкус.',
 
     'err.noOmdb': 'Въведете OMDb API ключ в Настройки', 'err.notFound': 'Няма намерени резултати', 'err.badKey': 'Невалиден API ключ',
@@ -205,7 +205,7 @@ const I18N = {
     'rec.noneType': 'No suggestions — rate titles of this kind ★★★ or higher.',
     'rec.next': 'Watch next', 'rec.fromList': 'from your list', 'rec.noneInList': 'No titles of this kind in "To watch".',
     'rec.emptyList.h': 'Your watch list is empty', 'rec.emptyList.p': 'Add titles to get recommendations.',
-    'rec.new': 'Discover something new', 'rec.findTaste': 'Find new ones for my taste', 'rec.loadSeed': 'Load suggestions from IMDb',
+    'rec.new': 'Discover something new', 'rec.findTaste': 'Find new ones for my taste', 'rec.loadSeed': 'Load suggestions from IMDb', 'rec.addAll': 'Add all to watch',
     'rec.noneKind': 'No titles of this kind.', 'rec.seedHint': 'Press "Load suggestions" to get top IMDb titles sorted by your taste.',
 
     'err.noOmdb': 'Enter an OMDb API key in Settings', 'err.notFound': 'No results found', 'err.badKey': 'Invalid API key',
