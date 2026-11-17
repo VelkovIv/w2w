@@ -390,6 +390,16 @@ async function handleAction(action, el) {
       el.disabled = true;
       try {
         await addTitle(id, action === 'add' ? 'towatch' : 'watched');
+        if (action === 'add') {
+          // "to watch" takes the user to the To watch page, where the title now is; filters reset so it shows
+          closeModals();
+          state.f = { ...defaultFilters(), sort: state.f.sort };
+          state.view = 'towatch';
+          syncFilterInputs();
+          render();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
         const row = el.closest('.result-actions');
         if (row) row.innerHTML = statusTag(byId(id));
         else render(); // a Discover or Recommendations card leaves its list once it is in the lists
