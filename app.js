@@ -980,9 +980,9 @@ function renderRecommend() {
         <datalist id="dl-taste">${[...new Set([...GENRES.map(g => tg(g.key)), ...state.items.flatMap(i => [...i.director, ...i.actors])])]
           .sort((a, b) => a.localeCompare(b)).map(n => `<option value="${esc(n)}">`).join('')}</datalist></div>` : '';
   html += `<div class="section-title"><h2>${t('rec.taste')}</h2>
-    ${hasTaste ? `<button class="btn ghost sm" data-action="taste-edit">${state.tasteEdit ? t('taste.done') : t('taste.edit')}</button>` : ''}
     ${state.tasteEdit ? `<span class="muted small">${t('taste.hint')}</span>` : ''}
-    ${state.tasteOff.length ? `<button class="btn ghost sm" data-action="taste-restore">${t('taste.restore', { n: state.tasteOff.length })}</button>` : ''}</div>`;
+    ${state.tasteOff.length ? `<button class="btn ghost sm" data-action="taste-restore">${t('taste.restore', { n: state.tasteOff.length })}</button>` : ''}
+    ${hasTaste ? `<button class="btn ${state.tasteEdit ? 'primary' : 'ghost'} sm taste-edit-btn" data-action="taste-edit">${state.tasteEdit ? t('taste.done') : t('taste.edit')}</button>` : ''}</div>`;
   html += hasTaste
     ? `<div class="panel taste">
         <div><h4>${t('rec.genres')}</h4>${chips(tg2, 'genre', tg)}</div>

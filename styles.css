@@ -255,6 +255,7 @@ button.chip:hover { border-color: var(--accent); color: var(--text); }
 .rec-for { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
 .rec-sep { margin-left: 12px; }
 .rec-find { margin-left: auto; }
+.taste-edit-btn { margin-left: auto; }
 .subsection { margin-bottom: 22px; }
 .sec-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
 .sec-toggle svg { width: 16px; height: 16px; transition: transform .2s ease; }
