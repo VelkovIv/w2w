@@ -14,6 +14,7 @@ const LS_VIEWERS = 'cinelist.viewers';
 const LS_REC_HIDDEN = 'cinelist.recHidden';
 const LS_TASTE_OFF = 'cinelist.tasteOff';
 const LS_TASTE_ADD = 'cinelist.tasteAdd';
+const LS_COLLAPSED = 'cinelist.collapsed';
 // ids of the first three are their original Bulgarian names, so existing marks keep working
 const DEFAULT_VIEWERS = [{ id: 'Мариана', name: 'Мариана', color: 0 }, { id: 'Ивайло', name: 'Ивайло', color: 1 }, { id: 'Семейно', name: 'Семейно', color: 2 }];
 const MAX_VIEWERS = 8;
@@ -94,7 +95,8 @@ const ICON = {
   plus: svg('<path d="M12 5v14M5 12h14"/>'),
   play: svg('<path d="M7 4l13 8-13 8z"/>'),
   pause: svg('<path d="M8 5v14M16 5v14"/>'),
-  hide: svg('<path d="M18 6 6 18M6 6l12 12"/>')
+  hide: svg('<path d="M18 6 6 18M6 6l12 12"/>'),
+  chev: svg('<path d="m6 9 6 6 6-6"/>')
 };
 
 const FLAGS = {
@@ -149,6 +151,7 @@ const state = {
   tasteOff: load(LS_TASTE_OFF, []),
   tasteAdd: load(LS_TASTE_ADD, []),
   tasteEdit: false,
+  collapsed: load(LS_COLLAPSED, {}),
   recs: { items: [], loading: false, sig: '', error: '' }
 };
 const imdbMap = load(LS_IMDBMAP, {});
@@ -356,6 +359,11 @@ async function handleAction(action, el) {
       setRecHidden(state.recHidden.filter(h => h.imdbID !== id));
       closeModals();
       return render();
+    case 'toggle-section': {
+      state.collapsed = { ...state.collapsed, [el.dataset.key]: !state.collapsed[el.dataset.key] };
+      localStorage.setItem(LS_COLLAPSED, JSON.stringify(state.collapsed));
+      return render();
+    }
     case 'taste-edit':
       state.tasteEdit = !state.tasteEdit;
       return render();
@@ -591,6 +599,9 @@ function populateFilterOptions() {
 // the cards fade in only the first time a view is shown; re-renders on the same view stay still
 let fadedView = null;
 const gridOpen = () => fadedView === state.view ? '<div class="grid">' : '<div class="grid enter">';
+// a section header that folds its grid away; the fold state is kept per section
+const isFolded = key => !!state.collapsed[key];
+const sectionHead = (key, label, count) => `<h3 class="sec-toggle${isFolded(key) ? ' folded' : ''}" data-action="toggle-section" data-key="${esc(key)}">${label} <span class="muted small">${count}</span>${ICON.chev}</h3>`;
 
 function render() {
   // first time the list has items (also after a cloud sync): start the To watch slider at the lowest rating
@@ -658,8 +669,9 @@ function renderList() {
     // movies and series in their own sections
     c.innerHTML = ['movie', 'series'].map(ty => {
       const part = list.filter(i => i.type === ty);
-      return part.length ? `<div class="subsection"><h3>${ty === 'movie' ? t('rec.movies') : t('rec.series')} <span class="muted small">${part.length}</span></h3>
-        ${gridOpen()}${part.map(i => card(i)).join('')}</div></div>` : '';
+      const key = 'towatch:' + ty;
+      return part.length ? `<div class="subsection">${sectionHead(key, ty === 'movie' ? t('rec.movies') : t('rec.series'), part.length)}
+        ${isFolded(key) ? '' : `${gridOpen()}${part.map(i => card(i)).join('')}</div>`}</div>` : '';
     }).join('');
   } else {
     c.innerHTML = `${gridOpen()}${list.map(i => card(i)).join('')}</div>`;
@@ -937,12 +949,13 @@ function renderRecommend() {
   const candidates = freshSeeds().map(id => scoreItem(state.discover[id], p)).sort((a, b) => b.s - a.s);
   const missing = SEED.some(id => !state.discover[id] && !byId(id));
 
-  const byType = (entries, limit, toCard, emptyText) => [['movie', t('rec.movies')], ['series', t('rec.series')]]
+  const byType = (entries, limit, toCard, emptyText, sec) => [['movie', t('rec.movies')], ['series', t('rec.series')]]
     .filter(([ty]) => !state.recType || state.recType === ty)
     .map(([ty, label]) => {
       const list = entries.filter(e => e.it.type === ty).slice(0, limit);
-      return `<div class="subsection"><h3>${label} <span class="muted small">${list.length}</span></h3>
-        ${list.length ? `${gridOpen()}${list.map(toCard).join('')}</div>` : `<p class="muted small">${emptyText}</p>`}</div>`;
+      const key = sec + ':' + ty;
+      return `<div class="subsection">${sectionHead(key, label, list.length)}
+        ${!list.length ? `<p class="muted small">${emptyText}</p>` : isFolded(key) ? '' : `${gridOpen()}${list.map(toCard).join('')}</div>`}</div>`;
     }).join('');
 
   const addedOf = kind => state.tasteAdd.filter(k => k.startsWith(kind + ':')).map(k => k.slice(kind.length + 1));
@@ -988,21 +1001,21 @@ function renderRecommend() {
   } else {
     const recs = r.items.filter(x => !byId(x.it.imdbID) && !hiddenRec(x.it.imdbID));
     if (recs.length || !r.loading) html += byType(recs, 12, x => card(x.it, { discover: true, hideable: true, reasons: x.because.slice(0, 2).map(title => t('reason.like', { title })) }),
-      r.loading ? t('loading') : t('rec.noneType'));
+      r.loading ? t('loading') : t('rec.noneType'), 'rec:because');
     if (r.loading) html += '<div class="loader"></div>';
     else if (r.error) html += `<p class="hint error">${esc(r.error)}</p>`;
   }
 
   html += `<div class="section-title"><h2>${t('rec.next')}</h2><span class="muted small">${t('rec.fromList')}</span></div>`;
   html += watchlist.length
-    ? byType(watchlist, 10, x => card(x.it, { reasons: x.reasons, hideable: true }), t('rec.noneInList'))
+    ? byType(watchlist, 10, x => card(x.it, { reasons: x.reasons, hideable: true }), t('rec.noneInList'), 'rec:next')
     : emptyState(t('rec.emptyList.h'), t('rec.emptyList.p'));
 
   html += `<div class="section-title"><h2>${t('rec.new')}</h2>
     ${candidates.length ? `<button class="btn primary sm" data-action="add-candidates">${ICON.plus} ${t('rec.addAll')}</button>` : ''}
     ${missing ? `<button class="btn ghost sm" data-action="load-discover" ${state.loadingDiscover ? 'disabled' : ''}>${state.loadingDiscover ? t('loading') : t('rec.loadSeed')}</button>` : ''}</div>`;
   html += state.loadingDiscover && !candidates.length ? '<div class="loader"></div>'
-    : candidates.length ? byType(candidates, 8, x => card(x.it, { discover: true, hideable: true, reasons: x.reasons }), t('rec.noneKind'))
+    : candidates.length ? byType(candidates, 8, x => card(x.it, { discover: true, hideable: true, reasons: x.reasons }), t('rec.noneKind'), 'rec:new')
     : `<div class="panel muted">${t('rec.seedHint')}</div>`;
 
   c.innerHTML = html;
