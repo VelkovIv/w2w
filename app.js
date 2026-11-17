@@ -391,9 +391,9 @@ async function handleAction(action, el) {
       try {
         await addTitle(id, action === 'add' ? 'towatch' : 'watched');
         if (action === 'add') {
-          // "to watch" takes the user to the To watch page, where the title now is; filters reset so it shows
+          // "to watch" takes the user to the To watch page, where the title now is; the other filters reset and the IMDb slider starts at its rating so it shows
           closeModals();
-          state.f = { ...defaultFilters(), sort: state.f.sort };
+          state.f = { ...defaultFilters(), sort: state.f.sort, minRating: Math.min(9.5, Math.floor((byId(id)?.rating ?? 0) * 2) / 2) };
           state.view = 'towatch';
           syncFilterInputs();
           render();
