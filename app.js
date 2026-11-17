@@ -13,6 +13,7 @@ const LS_SIDEBAR = 'cinelist.sidebarPinned';
 const LS_VIEWERS = 'cinelist.viewers';
 const LS_REC_HIDDEN = 'cinelist.recHidden';
 const LS_TASTE_OFF = 'cinelist.tasteOff';
+const LS_TASTE_ADD = 'cinelist.tasteAdd';
 // ids of the first three are their original Bulgarian names, so existing marks keep working
 const DEFAULT_VIEWERS = [{ id: 'Мариана', name: 'Мариана', color: 0 }, { id: 'Ивайло', name: 'Ивайло', color: 1 }, { id: 'Семейно', name: 'Семейно', color: 2 }];
 const MAX_VIEWERS = 8;
@@ -146,6 +147,7 @@ const state = {
   recType: '',
   recHidden: load(LS_REC_HIDDEN, []).filter(h => isId(h?.imdbID)),
   tasteOff: load(LS_TASTE_OFF, []),
+  tasteAdd: load(LS_TASTE_ADD, []),
   tasteEdit: false,
   recs: { items: [], loading: false, sig: '', error: '' }
 };
@@ -157,6 +159,8 @@ const hiddenRec = id => state.recHidden.some(h => h.imdbID === id);
 const setRecHidden = list => { state.recHidden = list; localStorage.setItem(LS_REC_HIDDEN, JSON.stringify(list)); };
 // taste entries the user removed from "Вашият вкус"; stored as "genre:Drama", "director:Name", "actor:Name"
 const setTasteOff = list => { state.tasteOff = list; localStorage.setItem(LS_TASTE_OFF, JSON.stringify(list)); };
+// favorites the user added by hand, stored the same way: "genre:Drama", "director:Name", "actor:Name"
+const setTasteAdd = list => { state.tasteAdd = list; localStorage.setItem(LS_TASTE_ADD, JSON.stringify(list)); };
 const viewersOf = it => Array.isArray(it.viewers) ? it.viewers : [];
 const isLiked = it => it.stars ? it.stars >= 3 : it.opinion === 'like';
 
@@ -344,6 +348,18 @@ async function handleAction(action, el) {
       if (!['genre', 'director', 'actor'].includes(key)) return;
       const entry = key + ':' + el.dataset.value;
       setTasteOff([...state.tasteOff.filter(x => x !== entry), entry]);
+      setTasteAdd(state.tasteAdd.filter(x => x !== entry));
+      return render();
+    }
+    case 'taste-add': {
+      const kind = $('#taste-kind').value;
+      const raw = $('#taste-value').value.trim().toLowerCase();
+      const names = kind === 'genre' ? GENRES.map(g => g.key) : [...new Set(state.items.flatMap(i => kind === 'director' ? i.director : i.actors))];
+      const value = names.find(n => n.toLowerCase() === raw || (kind === 'genre' && tg(n).toLowerCase() === raw));
+      if (!raw || !value) return toast(t('taste.notFound'), 'error');
+      const entry = kind + ':' + value;
+      setTasteOff(state.tasteOff.filter(x => x !== entry));
+      setTasteAdd([...state.tasteAdd.filter(x => x !== entry), entry]);
       return render();
     }
     case 'taste-restore':
@@ -777,6 +793,14 @@ function buildProfile(viewer = state.recViewer) {
     it.director.forEach(d => add(p.director, 'director', d, 2 * w));
     it.actors.slice(0, 4).forEach(a => add(p.actors, 'actor', a, 1.5 * w));
   });
+  // added by hand: counts as a strong like, unless the user removed it
+  const ADDED_W = { genre: 3, director: 4, actor: 3 };
+  state.tasteAdd.forEach(k => {
+    const i = k.indexOf(':'), kind = k.slice(0, i), name = k.slice(i + 1);
+    if (state.tasteOff.includes(k)) return;
+    const m = kind === 'actor' ? p.actors : p[kind];
+    m.set(name, (m.get(name) || 0) + ADDED_W[kind]);
+  });
   return p;
 }
 
@@ -884,7 +908,9 @@ function renderRecommend() {
         ${list.length ? `${gridOpen()}${list.map(toCard).join('')}</div>` : `<p class="muted small">${emptyText}</p>`}</div>`;
     }).join('');
 
-  const tg2 = topEntries(p.genre), td = topEntries(p.director, 5), ta = topEntries(p.actors, 6);
+  const addedOf = kind => state.tasteAdd.filter(k => k.startsWith(kind + ':')).map(k => k.slice(kind.length + 1));
+  const withAdded = (top, kind) => [...new Set([...top, ...addedOf(kind)])];
+  const tg2 = withAdded(topEntries(p.genre), 'genre'), td = withAdded(topEntries(p.director, 5), 'director'), ta = withAdded(topEntries(p.actors, 6), 'actor');
   const chips = (arr, key, fn = x => x) => arr.length
     ? `<div class="chips">${arr.map(v => state.tasteEdit
       ? `<button class="chip" data-action="taste-off" data-key="${key}" data-value="${esc(v)}">${esc(fn(v))} ×</button>`
@@ -896,15 +922,23 @@ function renderRecommend() {
     <span class="muted rec-sep">${t('rec.show')}</span>${[['', t('type.both')], ['movie', t('rec.movies')], ['series', t('rec.series')]].map(([v, label]) =>
     `<button class="chip toggle ${state.recType === v ? 'on' : ''}" data-action="rec-type" data-value="${v}">${label}</button>`).join('')}
     <button class="btn primary sm rec-find" data-action="discover-taste">${t('rec.findTaste')}</button></div>`;
+  const hasTaste = p.rated || state.tasteAdd.length > 0;
+  const tasteAddRow = state.tasteEdit ? `<div class="taste-add">
+        <select id="taste-kind"><option value="genre">${t('taste.kind.genre')}</option><option value="director">${t('taste.kind.director')}</option><option value="actor">${t('taste.kind.actor')}</option></select>
+        <input id="taste-value" list="dl-taste" placeholder="${t('taste.addPh')}" autocomplete="off">
+        <button class="btn primary sm" data-action="taste-add">${ICON.plus} ${t('taste.add')}</button>
+        <datalist id="dl-taste">${[...new Set([...GENRES.map(g => tg(g.key)), ...state.items.flatMap(i => [...i.director, ...i.actors])])]
+          .sort((a, b) => a.localeCompare(b)).map(n => `<option value="${esc(n)}">`).join('')}</datalist></div>` : '';
   html += `<div class="section-title"><h2>${t('rec.taste')}</h2>
-    ${p.rated ? `<button class="btn ghost sm" data-action="taste-edit">${state.tasteEdit ? t('taste.done') : t('taste.edit')}</button>` : ''}
+    ${hasTaste ? `<button class="btn ghost sm" data-action="taste-edit">${state.tasteEdit ? t('taste.done') : t('taste.edit')}</button>` : ''}
     ${state.tasteEdit ? `<span class="muted small">${t('taste.hint')}</span>` : ''}
     ${state.tasteOff.length ? `<button class="btn ghost sm" data-action="taste-restore">${t('taste.restore', { n: state.tasteOff.length })}</button>` : ''}</div>`;
-  html += p.rated
+  html += hasTaste
     ? `<div class="panel taste">
         <div><h4>${t('rec.genres')}</h4>${chips(tg2, 'genre', tg)}</div>
         <div><h4>${t('rec.directors')}</h4>${chips(td, 'director')}</div>
         <div><h4>${t('rec.actors')}</h4>${chips(ta, 'actor')}</div>
+        ${tasteAddRow}
       </div>`
     : `<div class="panel muted">${t('rec.rateHint')}</div>`;
 
