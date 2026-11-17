@@ -158,6 +158,12 @@ const recCache = new Map();
 const hiddenRec = id => state.recHidden.some(h => h.imdbID === id);
 // suggestions from the seed list that are not in the lists yet and not hidden
 const freshSeeds = () => SEED.filter(id => state.discover[id] && !byId(id) && popular(state.discover[id]) && !hiddenRec(id));
+// To watch: the IMDb slider starts at the lowest rating in the list (0.5 steps), so every title shows
+const lowestTowatch = () => {
+  const r = state.items.filter(i => i.status === 'towatch').map(i => i.rating ?? 0);
+  return r.length ? Math.min(9.5, Math.floor(Math.min(...r) * 2) / 2) : 0;
+};
+let towatchSeeded = false;
 const setRecHidden = list => { state.recHidden = list; localStorage.setItem(LS_REC_HIDDEN, JSON.stringify(list)); };
 // taste entries the user removed from "Вашият вкус"; stored as "genre:Drama", "director:Name", "actor:Name"
 const setTasteOff = list => { state.tasteOff = list; localStorage.setItem(LS_TASTE_OFF, JSON.stringify(list)); };
@@ -315,7 +321,7 @@ async function handleAction(action, el) {
       return toast(t('toast.addedMany', { n: list.length }));
     }
     case 'close-modal': return closeModals();
-    case 'reset-filters': state.f = defaultFilters(); syncFilterInputs(); return renderList();
+    case 'reset-filters': state.f = defaultFilters(); if (state.view === 'towatch') state.f.minRating = lowestTowatch(); syncFilterInputs(); return renderList();
     case 'save-key': return saveKey();
     case 'export': return exportData();
     case 'import': return $('#import-file').click();
@@ -379,7 +385,7 @@ async function handleAction(action, el) {
     case 'filter': {
       closeModals();
       if (state.view === 'recommend' || state.view === 'discover' || state.view === 'disliked') state.view = 'towatch';
-      state.f = { ...defaultFilters(), sort: state.f.sort, [el.dataset.key]: el.dataset.value };
+      state.f = { ...defaultFilters(), sort: state.f.sort, minRating: state.view === 'towatch' ? lowestTowatch() : defaultFilters().minRating, [el.dataset.key]: el.dataset.value };
       syncFilterInputs();
       return render();
     }
@@ -391,10 +397,9 @@ async function handleAction(action, el) {
       try {
         await addTitle(id, action === 'add' ? 'towatch' : 'watched');
         if (action === 'add') {
-          // "to watch" takes the user to the To watch page, where the title now is; the other filters reset and the IMDb slider starts at the lowest rating in the list, so every title shows
+          // "to watch" takes the user to the To watch page, where the title now is; the other filters reset and the IMDb slider starts at the lowest rating in the list
           closeModals();
-          const lowest = Math.min(...state.items.filter(i => i.status === 'towatch').map(i => i.rating ?? 0));
-          state.f = { ...defaultFilters(), sort: state.f.sort, minRating: Math.min(9.5, Math.floor(lowest * 2) / 2) };
+          state.f = { ...defaultFilters(), sort: state.f.sort, minRating: lowestTowatch() };
           state.view = 'towatch';
           syncFilterInputs();
           render();
@@ -478,7 +483,9 @@ document.addEventListener('keydown', e => {
 });
 
 $$('.nav-btn[data-view]').forEach(b => b.addEventListener('click', () => {
+  const prev = state.view;
   state.view = b.dataset.view;
+  if (state.view === 'towatch' && prev !== 'towatch') state.f.minRating = lowestTowatch();
   if (state.view !== 'watched') { state.f.opinion = ''; state.f.viewer = ''; }
   if (state.view !== 'towatch') state.f.progress = '';
   syncFilterInputs();
@@ -586,6 +593,8 @@ let fadedView = null;
 const gridOpen = () => fadedView === state.view ? '<div class="grid">' : '<div class="grid enter">';
 
 function render() {
+  // first time the list has items (also after a cloud sync): start the To watch slider at the lowest rating
+  if (!towatchSeeded && state.items.length) { towatchSeeded = true; state.f.minRating = lowestTowatch(); syncFilterInputs(); }
   $('#view-title').textContent = t('view.' + state.view);
   $('#view-sub').textContent = t('view.' + state.view + '.sub');
   $$('.nav-btn[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === state.view));
