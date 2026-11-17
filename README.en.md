@@ -27,8 +27,9 @@
 ## Features
 
 ### Lists
-- **To watch** — titles we are going to watch. Started ones are marked **▶ Watching** and stay on top until finished.
-- **Watched** — finished titles. Titles can be moved manually in both directions.
+- **To watch** — titles we are going to watch, split into **Movies** and **Series**. Started ones are marked **▶ Watching** and stay on top until finished.
+- **Watched** — finished titles. Titles can be moved manually in both directions. The **I watched it** button in Discover or Recommendations adds the title to Watched and opens its details so you can rate it.
+- **Not for me** — titles you hid from recommendations. Bring them back from there or with the button in the title details.
 - **Season counter** for series (`Season 2 / 4`).
 - **New season** — once a day watched series are checked for a new season; if there is one, the series moves back to "To watch" automatically.
 
@@ -41,13 +42,14 @@
 - Add by title or IMDb link — details and ratings come from **IMDb**.
 - **Discover** — titles are fetched automatically by criteria:
   keyword / franchise (e.g. *Star Wars*), genre, actor, director, **studio or platform** (Apple TV+, Disney+, Netflix, HBO…), minimum IMDb rating, years, language.
-- Titles already in your lists are shown with a label of their category.
-- **Discover** and **Recommendations** only show titles with **over 50,000 IMDb votes**. Discover does not show titles you have already watched.
-- Filters and sorting by actor, director, genre, rating, type, my rating and viewer.
+- Titles already in your lists, or hidden as "Not for me", are not shown in **Discover**. When you add a title to watch from **Discover** or **Recommendations**, the **To watch** page opens with that title.
+- **Discover** and **Recommendations** only show titles with **over 50,000 IMDb votes**.
+- Filters and sorting by actor, director, genre, rating, type, my rating and viewer. The **IMDB ≥** slider defaults to 6; on **To watch** it starts at the lowest rating in the list, so every title shows.
 
 ### Recommendations
 - **Because you liked…** — titles similar to the ones rated ★★★+, ordered by your taste.
 - **Watch next** — your watch list ordered by the genres, directors and actors you like.
+- **Find new ones for my taste** — a search in Discover based on your favourite genres. **Add all to watch** moves the suggestions from "Discover something new" to **To watch**.
 - Filter by viewer and separate **Movies** and **Series** sections.
 - **Your taste** — with **Edit** you can remove genres, directors and actors or add new ones.
 - The **Not for me** button (on a card or in the title details) hides the title from recommendations. Hidden titles are in the **Not for me** menu item, where you can bring them back. The hidden list is kept on this device only.
@@ -59,7 +61,7 @@
 
 ### Interface
 - **Side menu** that collapses to icons and opens on hover; with 📌 it stays open.
-- Compact **stats**: watching now, titles in total, liked / disliked.
+- Compact **stats**: watching now, titles in total, liked / disliked. "Not for me" titles count as disliked.
 - The **header shrinks** while scrolling; on phones the filters open with a funnel button.
 
 ---
