@@ -31,7 +31,7 @@
 - **Watched** — finished titles. Titles can be moved manually in both directions. The **I watched it** button in Discover or Recommendations adds the title to Watched and opens its details so you can rate it.
 - **Not for me** — titles you hid from recommendations. Bring them back from there or with the button in the title details.
 - **Season counter** for series (`Season 2 / 4`).
-- For series in **To watch** a counter shows `Season − 2 / 4 +` and the episode length (`· 40 min`). Not started series show `Season − 0 / 4 +`. In other views the cards show the episode length and the number of seasons (for example `60 min per episode · 3 seasons`). If IMDb has no episode length, it is taken from TMDB.
+- For series the episode length sits next to the year, as for movies. In **To watch** a counter shows `Season − 2 / 4 +`, and not started series show `Season − 0 / 4 +`. Other views also show the number of seasons (for example `2017–2020 · 60 min · 3 seasons`). If IMDb has no episode length, it is taken from TMDB.
 - **New season** — once a day watched series are checked for a new season; if there is one, the series moves back to "To watch" automatically.
 
 ### Ratings and notes

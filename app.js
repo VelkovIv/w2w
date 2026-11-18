@@ -209,7 +209,7 @@ function seasonHtml(it) {
   return `<div class="season">${t('season')}
     <button class="step" data-action="season" data-id="${id}" data-value="-1" title="${t('season.prev')}">−</button>
     <b>${it.season || 0}</b>${it.totalSeasons ? `<span class="muted">/ ${it.totalSeasons}</span>` : ''}
-    <button class="step" data-action="season" data-id="${id}" data-value="1" title="${t('season.next')}">+</button>${it.runtime ? `<span class="muted">· ${fmtRuntime(it.runtime)}</span>` : ''}</div>`;
+    <button class="step" data-action="season" data-id="${id}" data-value="1" title="${t('season.next')}">+</button></div>`;
 }
 const personCache = new Map();
 const keywordCache = new Map();
@@ -703,13 +703,14 @@ function posterHtml(it) {
     : `<div class="noposter">${esc(it.title.charAt(0))}</div>`;
 }
 
-// episode length as "60 мин"; series show it with the season counter in To watch, here otherwise
+// episode length as "60 мин", shown next to the year like for movies
 const fmtRuntime = rt => esc(rt).replace(/min$/, t('unit.min'));
-// series show the episode length and the number of seasons; in To watch the season counter shows them instead
+// the year line: the length like for movies; seasons too, except in To watch where the counter row shows them
 const runtimeText = (it, discover = false) => {
-  if (it.type !== 'series') return it.runtime ? fmtRuntime(it.runtime) : '';
-  if (!discover && it.status === 'towatch') return ''; // in To watch the counter row shows the length (seasonHtml)
-  return [it.runtime && `${fmtRuntime(it.runtime)} ${t('per.ep')}`, it.totalSeasons && t('seasons.count', { n: it.totalSeasons })].filter(Boolean).join(' · ');
+  const len = it.runtime ? fmtRuntime(it.runtime) : '';
+  if (it.type !== 'series') return len;
+  if (!discover && it.status === 'towatch') return len;
+  return [len, it.totalSeasons && t('seasons.count', { n: it.totalSeasons })].filter(Boolean).join(' · ');
 };
 
 function card(it, { discover = false, reasons = [], hideable = false, restorable = false } = {}) {
