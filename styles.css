@@ -123,9 +123,10 @@ body.sb-pinned .pin-btn { color: var(--accent); background: rgba(124, 92, 255, .
 .sticky-head .topbar { margin-bottom: 16px; }
 .range.solo { flex: 1 1 100%; }
 .version { font-size: .72rem; color: var(--muted); padding: 0 8px; opacity: .7; }
-/* collapsed menu: only the version number, at the bottom */
-body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .version { opacity: 1; text-align: center; padding: 0; margin-top: auto; font-size: .66rem; }
-body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .version :is(.sep, span:first-child) { display: none; }
+/* collapsed menu: W2W and the version on two lines at the bottom, same font size */
+body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .version { opacity: .7; text-align: center; padding: 0; margin-top: auto; }
+body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .version span { display: block; }
+body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .version .sep { display: none; }
 body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .side-stats { display: none; } /* the stats take height, so the version would be pushed off the bottom */
 .topbar { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
 .topbar h1 { font-size: 2rem; font-weight: 800; letter-spacing: -.03em; }
