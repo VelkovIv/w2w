@@ -123,6 +123,10 @@ body.sb-pinned .pin-btn { color: var(--accent); background: rgba(124, 92, 255, .
 .sticky-head .topbar { margin-bottom: 16px; }
 .range.solo { flex: 1 1 100%; }
 .version { font-size: .72rem; color: var(--muted); padding: 0 8px; opacity: .7; }
+/* collapsed menu: W2W and the version on two lines, under the icons */
+body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .version { opacity: .7; text-align: center; padding: 0; }
+body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .version span { display: block; }
+body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .version .sep { display: none; }
 .topbar { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
 .topbar h1 { font-size: 2rem; font-weight: 800; letter-spacing: -.03em; }
 .topbar p { margin-top: 4px; }
