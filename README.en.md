@@ -61,7 +61,7 @@
 - **Български / English** — a switch with a flag in the menu (Bulgarian is the default). The choice is remembered per device.
 
 ### Interface
-- **Side menu** that collapses to icons and opens on hover; with 📌 it stays open. Collapsed, the version shows on two lines under the W2W logo.
+- **Side menu** that collapses to icons and opens on hover; with 📌 it stays open. Collapsed, the version shows on two lines at the bottom.
 - **Movies** and **Series** sections in "To watch" and Recommendations fold and unfold when you click the section title.
 - Compact **stats**: watching now, titles in total, liked / disliked. "Not for me" titles count as disliked.
 - The **header shrinks** while scrolling; on phones the filters open with a funnel button.

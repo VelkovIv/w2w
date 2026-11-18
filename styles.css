@@ -124,8 +124,7 @@ body.sb-pinned .pin-btn { color: var(--accent); background: rgba(124, 92, 255, .
 .range.solo { flex: 1 1 100%; }
 .version { font-size: .72rem; color: var(--muted); padding: 0 8px; opacity: .7; }
 /* collapsed menu: W2W and the version on two lines, under the icons */
-body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .version { opacity: .7; text-align: center; padding: 0; order: -1; font-size: .62rem; }
-body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .brand { order: -2; }
+body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .version { opacity: .7; text-align: center; padding: 0; margin-top: auto; font-size: .62rem; }
 body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .version span { display: block; }
 body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .version .sep { display: none; }
 body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .side-stats { display: none; } /* the stats take height, so the version would be pushed off the bottom */
