@@ -945,6 +945,7 @@ async function loadRecs(force = false) {
   r.loading = false;
   persistCaches();
   render();
+  fillSeriesRuntime(r.items.map(x => x.it)).catch(() => {});
 }
 
 function renderRecommend() {
@@ -1054,6 +1055,7 @@ async function loadDiscover() {
   localStorage.setItem(LS_DISCOVER, JSON.stringify(state.discover));
   state.loadingDiscover = false;
   render();
+  fillSeriesRuntime(Object.values(state.discover)).catch(() => {});
   if (failed) toast(t('toast.notLoaded', { n: failed }), 'warn');
 }
 
@@ -1276,6 +1278,7 @@ async function runDiscover(reset) {
   d.loading = false;
   persistCaches();
   render();
+  fillSeriesRuntime(d.results).catch(() => {});
 }
 
 function renderDiscover() {
@@ -1677,20 +1680,27 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 let started = false;
 // series without an episode length (OMDb often has none): ask TMDB once per title and keep the result
 const runtimeTried = new Set();
-async function fillSeriesRuntime() {
+async function tvRuntime(id) {
+  const d = await tmdb(`/tv/${id}`);
+  const known = d.episode_run_time?.[0] || d.last_episode_to_air?.runtime || d.next_episode_to_air?.runtime;
+  if (known) return known;
+  const s = await tmdb(`/tv/${id}/season/1`);
+  return s.episodes?.find(e => e.runtime)?.runtime || null;
+}
+async function fillSeriesRuntime(list = state.items) {
   if (!localStorage.getItem(LS_TMDB)) return;
-  const todo = state.items.filter(i => i.type === 'series' && !i.runtime && isId(i.imdbID) && !runtimeTried.has(i.imdbID));
+  const todo = list.filter(i => i.type === 'series' && !i.runtime && isId(i.imdbID) && !runtimeTried.has(i.imdbID));
   let changed = false;
   for (const it of todo) {
     runtimeTried.add(it.imdbID);
     try {
       const ref = await tmdbRef(it.imdbID);
       if (ref?.t !== 'tv') continue;
-      const mins = (await tmdb(`/tv/${ref.id}`)).episode_run_time?.[0];
+      const mins = await tvRuntime(ref.id);
       if (mins) { it.runtime = `${mins} min`; changed = true; }
     } catch { /* the title stays without a length */ }
   }
-  if (changed) { save(); render(); }
+  if (changed) { save(); persistCaches(); render(); }
 }
 
 function start() {
