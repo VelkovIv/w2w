@@ -31,6 +31,7 @@
 - **Watched** — finished titles. Titles can be moved manually in both directions. The **I watched it** button in Discover or Recommendations adds the title to Watched and opens its details so you can rate it.
 - **Not for me** — titles you hid from recommendations. Bring them back from there or with the button in the title details.
 - **Season counter** for series (`Season 2 / 4`).
+- For series the cards and details show the **episode length** and the **number of seasons** (for example `23 min per episode · 8 seasons`), even before you start them.
 - **New season** — once a day watched series are checked for a new season; if there is one, the series moves back to "To watch" automatically.
 
 ### Ratings and notes

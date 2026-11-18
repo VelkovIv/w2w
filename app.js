@@ -701,6 +701,11 @@ function posterHtml(it) {
     : `<div class="noposter">${esc(it.title.charAt(0))}</div>`;
 }
 
+// series show the episode length and the number of seasons, so you know what you are starting
+const runtimeText = it => it.type === 'series'
+  ? [it.runtime && `${esc(it.runtime)} ${t('per.ep')}`, it.totalSeasons && t('seasons.count', { n: it.totalSeasons })].filter(Boolean).join(' · ')
+  : esc(it.runtime || '');
+
 function card(it, { discover = false, reasons = [], hideable = false, restorable = false } = {}) {
   const own = discover ? byId(it.imdbID) : null;
   if (own) it = own;
@@ -731,7 +736,7 @@ function card(it, { discover = false, reasons = [], hideable = false, restorable
     <div class="poster">${posterHtml(it)}${rating}${op}${progress}<span class="badge type">${typeLabel(it.type)}</span></div>
     <div class="card-body">
       <h3>${esc(it.title)}</h3>
-      <div class="meta">${esc(it.year)}${it.runtime ? ' · ' + esc(it.runtime) : ''}</div>
+      <div class="meta">${esc(it.year)}${runtimeText(it) ? ' · ' + runtimeText(it) : ''}</div>
       <div class="chips">${it.genre.slice(0, 3).map(g => `<span class="chip">${esc(tg(g))}</span>`).join('')}</div>
       <div class="people" title="${esc(people)}">${esc(people)}</div>
       ${reasons.length ? `<div class="reasons">${reasons.map(r => `<span>${esc(r)}</span>`).join('')}</div>` : ''}
@@ -769,7 +774,7 @@ function openDetail(id) {
     <div class="detail">
       <div class="detail-poster">${posterHtml(it)}</div>
       <div class="detail-info">
-        <div class="detail-type">${typeLabel(it.type)} · ${esc(it.year)}${it.runtime ? ' · ' + esc(it.runtime) : ''}${it.country ? ' · ' + esc(it.country) : ''}</div>
+        <div class="detail-type">${typeLabel(it.type)} · ${esc(it.year)}${runtimeText(it) ? ' · ' + runtimeText(it) : ''}${it.country ? ' · ' + esc(it.country) : ''}</div>
         <h2>${esc(it.title)}</h2>
         <div class="big-rating"><b>★ ${it.rating != null ? it.rating.toFixed(1) : '—'}</b><span class="muted">/ 10 IMDb${it.votes ? ' · ' + esc(it.votes) + ' ' + t('detail.votes') : ''}</span></div>
         ${chipList(it.genre, 'genre', tg)}
