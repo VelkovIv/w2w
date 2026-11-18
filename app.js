@@ -202,13 +202,14 @@ const statusInfo = it => it.status === 'watched' ? ['watched', t('status.watched
   : it.watching ? ['watching', t('status.watching')] : ['towatch', t('status.towatch')];
 const statusTag = it => { const [cls, text] = statusInfo(it); return `<span class="tag status ${cls}">${text}</span>`; };
 
+// the season counter with the episode length; shown for every series in To watch, watching or not
 function seasonHtml(it) {
-  if (it.type !== 'series' || !it.watching || it.status !== 'towatch') return '';
+  if (it.type !== 'series' || it.status !== 'towatch') return '';
   const id = esc(it.imdbID);
   return `<div class="season">${t('season')}
     <button class="step" data-action="season" data-id="${id}" data-value="-1" title="${t('season.prev')}">−</button>
-    <b>${it.season || 1}</b>${it.totalSeasons ? `<span class="muted">/ ${it.totalSeasons}</span>` : ''}
-    <button class="step" data-action="season" data-id="${id}" data-value="1" title="${t('season.next')}">+</button></div>`;
+    <b>${it.season || 0}</b>${it.totalSeasons ? `<span class="muted">/ ${it.totalSeasons}</span>` : ''}
+    <button class="step" data-action="season" data-id="${id}" data-value="1" title="${t('season.next')}">+</button>${it.runtime ? `<span class="muted">· ${fmtRuntime(it.runtime)}</span>` : ''}</div>`;
 }
 const personCache = new Map();
 const keywordCache = new Map();
@@ -276,6 +277,7 @@ async function addTitle(id, status = 'towatch') {
   state.items.unshift(item);
   save();
   render();
+  fillSeriesRuntime().catch(() => {});
   toast(status === 'watched' ? t('toast.addedWatched', { title: item.title }) : t('toast.added', { title: item.title }));
 }
 
@@ -433,8 +435,8 @@ async function handleAction(action, el) {
       if (it.watching && it.type === 'series' && !it.season) it.season = 1;
       break;
     case 'season': {
-      const n = (it.season || 1) + (el.dataset.value === '-1' ? -1 : 1);
-      it.season = Math.max(1, it.totalSeasons ? Math.min(it.totalSeasons, n) : n);
+      const n = (it.season || 0) + (el.dataset.value === '-1' ? -1 : 1);
+      it.season = Math.max(0, it.totalSeasons ? Math.min(it.totalSeasons, n) : n);
       break;
     }
     case 'watched':
@@ -701,10 +703,14 @@ function posterHtml(it) {
     : `<div class="noposter">${esc(it.title.charAt(0))}</div>`;
 }
 
-// series show the episode length and the number of seasons, so you know what you are starting
-const runtimeText = it => it.type === 'series'
-  ? [it.runtime && `${esc(it.runtime)} ${t('per.ep')}`, it.totalSeasons && t('seasons.count', { n: it.totalSeasons })].filter(Boolean).join(' · ')
-  : esc(it.runtime || '');
+// episode length as "60 мин"; series show it with the season counter in To watch, here otherwise
+const fmtRuntime = rt => esc(rt).replace(/min$/, t('unit.min'));
+// series show the episode length and the number of seasons; in To watch the season counter shows them instead
+const runtimeText = (it, discover = false) => {
+  if (it.type !== 'series') return it.runtime ? fmtRuntime(it.runtime) : '';
+  if (!discover && it.status === 'towatch') return ''; // in To watch the counter row shows the length (seasonHtml)
+  return [it.runtime && `${fmtRuntime(it.runtime)} ${t('per.ep')}`, it.totalSeasons && t('seasons.count', { n: it.totalSeasons })].filter(Boolean).join(' · ');
+};
 
 function card(it, { discover = false, reasons = [], hideable = false, restorable = false } = {}) {
   const own = discover ? byId(it.imdbID) : null;
@@ -736,7 +742,7 @@ function card(it, { discover = false, reasons = [], hideable = false, restorable
     <div class="poster">${posterHtml(it)}${rating}${op}${progress}<span class="badge type">${typeLabel(it.type)}</span></div>
     <div class="card-body">
       <h3>${esc(it.title)}</h3>
-      <div class="meta">${esc(it.year)}${runtimeText(it) ? ' · ' + runtimeText(it) : ''}</div>
+      <div class="meta">${esc(it.year)}${runtimeText(it, discover) ? ' · ' + runtimeText(it, discover) : ''}</div>
       <div class="chips">${it.genre.slice(0, 3).map(g => `<span class="chip">${esc(tg(g))}</span>`).join('')}</div>
       <div class="people" title="${esc(people)}">${esc(people)}</div>
       ${reasons.length ? `<div class="reasons">${reasons.map(r => `<span>${esc(r)}</span>`).join('')}</div>` : ''}
@@ -774,7 +780,7 @@ function openDetail(id) {
     <div class="detail">
       <div class="detail-poster">${posterHtml(it)}</div>
       <div class="detail-info">
-        <div class="detail-type">${typeLabel(it.type)} · ${esc(it.year)}${runtimeText(it) ? ' · ' + runtimeText(it) : ''}${it.country ? ' · ' + esc(it.country) : ''}</div>
+        <div class="detail-type">${typeLabel(it.type)} · ${esc(it.year)}${runtimeText(it, !inList) ? ' · ' + runtimeText(it, !inList) : ''}${it.country ? ' · ' + esc(it.country) : ''}</div>
         <h2>${esc(it.title)}</h2>
         <div class="big-rating"><b>★ ${it.rating != null ? it.rating.toFixed(1) : '—'}</b><span class="muted">/ 10 IMDb${it.votes ? ' · ' + esc(it.votes) + ' ' + t('detail.votes') : ''}</span></div>
         ${chipList(it.genre, 'genre', tg)}
@@ -1668,6 +1674,24 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 }
 
 let started = false;
+// series without an episode length (OMDb often has none): ask TMDB once per title and keep the result
+const runtimeTried = new Set();
+async function fillSeriesRuntime() {
+  if (!localStorage.getItem(LS_TMDB)) return;
+  const todo = state.items.filter(i => i.type === 'series' && !i.runtime && isId(i.imdbID) && !runtimeTried.has(i.imdbID));
+  let changed = false;
+  for (const it of todo) {
+    runtimeTried.add(it.imdbID);
+    try {
+      const ref = await tmdbRef(it.imdbID);
+      if (ref?.t !== 'tv') continue;
+      const mins = (await tmdb(`/tv/${ref.id}`)).episode_run_time?.[0];
+      if (mins) { it.runtime = `${mins} min`; changed = true; }
+    } catch { /* the title stays without a length */ }
+  }
+  if (changed) { save(); render(); }
+}
+
 function start() {
   if (started) return;
   started = true;
@@ -1676,7 +1700,7 @@ function start() {
   initDiscoverForm();
   render();
   if (!localStorage.getItem(LS_KEY) || !localStorage.getItem(LS_TMDB)) openSettings();
-  else checkNewSeasons().catch(() => {});
+  else { checkNewSeasons().catch(() => {}); fillSeriesRuntime().catch(() => {}); }
 }
 
 // Bridge for cloud.js (Firebase auth + sync)
