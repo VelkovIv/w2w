@@ -76,7 +76,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .nav-btn.active svg { color: var(--accent); }
 .count { margin-left: auto; font-size: .75rem; padding: 2px 8px; border-radius: 99px; background: var(--panel-2); }
 
-.side-stats { margin-top: auto; display: grid; gap: 6px; }
+.side-stats { display: grid; gap: 6px; }
 .stat { margin: 0; min-width: 0; padding: 0 12px 8px; border-radius: 12px; background: var(--panel); border: 1px solid var(--border); }
 .stat legend { padding: 0 6px; margin-left: -2px; font-size: .68rem; color: var(--muted); white-space: nowrap; }
 .stat b { font-size: 1.05rem; display: block; line-height: 1.2; }
@@ -122,9 +122,8 @@ body.sb-pinned .pin-btn { color: var(--accent); background: rgba(124, 92, 255, .
 .sticky-head .filters { margin-bottom: 0; }
 .sticky-head .topbar { margin-bottom: 16px; }
 .range.solo { flex: 1 1 100%; }
-.version { font-size: .72rem; color: var(--muted); padding: 0 8px; opacity: .7; }
-/* collapsed menu: W2W and the version on two lines at the bottom, same font size */
-body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .version { opacity: .7; text-align: center; padding: 0; margin-top: auto; }
+.version { font-size: .72rem; color: var(--muted); padding: 0 8px; opacity: .7; margin-top: auto; }
+/* collapsed menu: W2W stays where it is, the version number drops under it */
 body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .version span { display: block; }
 body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .version .sep { display: none; }
 body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .side-stats { display: none; } /* the stats take height, so the version would be pushed off the bottom */
