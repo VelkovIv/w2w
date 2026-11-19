@@ -126,6 +126,8 @@ body.sb-pinned .pin-btn { color: var(--accent); background: rgba(124, 92, 255, .
 /* collapsed menu: W2W stays where it is, the version number drops under it */
 body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .version span { display: block; }
 body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .version .sep { display: none; }
+/* the number drops below; the negative margin keeps W2W on the line where it is when expanded */
+body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .version { margin-bottom: -1.2em; }
 body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .side-stats { display: none; } /* the stats take height, so the version would be pushed off the bottom */
 .topbar { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
 .topbar h1 { font-size: 2rem; font-weight: 800; letter-spacing: -.03em; }
