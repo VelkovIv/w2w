@@ -76,7 +76,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .nav-btn.active svg { color: var(--accent); }
 .count { margin-left: auto; font-size: .75rem; padding: 2px 8px; border-radius: 99px; background: var(--panel-2); }
 
-.side-stats { display: grid; gap: 6px; }
+.side-stats { margin-top: auto; display: grid; gap: 6px; }
 .stat { margin: 0; min-width: 0; padding: 0 12px 8px; border-radius: 12px; background: var(--panel); border: 1px solid var(--border); }
 .stat legend { padding: 0 6px; margin-left: -2px; font-size: .68rem; color: var(--muted); white-space: nowrap; }
 .stat b { font-size: 1.05rem; display: block; line-height: 1.2; }
@@ -95,7 +95,7 @@ body.sb-pinned .pin-btn { color: var(--accent); background: rgba(124, 92, 255, .
 @media (min-width: 861px) {
   body { grid-template-columns: 74px 1fr; }
   body.sb-pinned { grid-template-columns: 250px 1fr; }
-  .sidebar { width: 74px; overflow: hidden; z-index: 45; transition: width .2s ease, background .2s, box-shadow .2s; }
+  .sidebar { width: 74px; overflow: hidden; z-index: 45; padding-bottom: 0; transition: width .2s ease, background .2s, box-shadow .2s; }
   .sidebar:hover, .sidebar:has(:focus-visible), body.sb-pinned .sidebar { width: 250px; }
   body:not(.sb-pinned) .sidebar:hover, body:not(.sb-pinned) .sidebar:has(:focus-visible) {
     background: rgba(10, 11, 18, .97); box-shadow: 24px 0 40px -24px rgba(0, 0, 0, .9);
@@ -122,13 +122,11 @@ body.sb-pinned .pin-btn { color: var(--accent); background: rgba(124, 92, 255, .
 .sticky-head .filters { margin-bottom: 0; }
 .sticky-head .topbar { margin-bottom: 16px; }
 .range.solo { flex: 1 1 100%; }
-.version { font-size: .72rem; color: var(--muted); padding: 0 8px; opacity: .7; margin-top: auto; }
-/* collapsed menu: W2W stays where it is, the version number drops under it */
+.version { font-size: .72rem; color: var(--muted); padding: 0 8px; opacity: .7; margin-top: 0; margin-bottom: 28px; line-height: 1.25; }
+/* collapsed menu: W2W stays where it is; the version number drops below it (the box keeps one line tall, the rest overflows) */
 body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .version span { display: block; }
 body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .version .sep { display: none; }
-/* the number drops below; the negative margin keeps W2W on the line where it is when expanded */
-body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .version { margin-bottom: -1.2em; }
-body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .side-stats { display: none; } /* the stats take height, so the version would be pushed off the bottom */
+body:not(.sb-pinned) .sidebar:not(:hover):not(:has(:focus-visible)) .version { height: 1.25em; }
 .topbar { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
 .topbar h1 { font-size: 2rem; font-weight: 800; letter-spacing: -.03em; }
 .topbar p { margin-top: 4px; }
